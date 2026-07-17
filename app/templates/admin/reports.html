@@ -1,0 +1,66 @@
+{% extends "admin/dashboard.html" %}
+
+{% block title %}Reports - CRMIAA{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+    <header class="topbar">
+        <div class="topbar__brand">
+            <div class="topbar__logo" aria-hidden="true">C</div>
+            <span class="topbar__name">CRMIAA</span>
+        </div>
+        <div class="topbar__actions">
+            <span class="topbar__user">
+                <span class="topbar__avatar" aria-hidden="true">
+                    {{ username[0] | upper }}
+                </span>
+                {{ username }}
+            </span>
+            <a class="btn btn--ghost" href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+            <a class="btn btn--ghost" href="{{ url_for('auth.logout') }}">Sign out</a>
+        </div>
+    </header>
+
+    <main class="admin-main">
+        <section class="hero">
+            <p class="hero__eyebrow">Admin Console</p>
+            <h1 class="hero__title">Reports</h1>
+            <p class="hero__subtitle">Import user records from Excel workbooks.</p>
+        </section>
+
+        <section class="report-tools" aria-label="Report tools">
+            <form class="import-widget" method="POST"
+                  action="{{ url_for('admin.import_report_users') }}"
+                  enctype="multipart/form-data">
+                <div>
+                    <h2 class="import-widget__title">Import</h2>
+                    <p class="import-widget__meta">Required columns: Username, Role. Optional column: Password.</p>
+                </div>
+
+                <div class="import-widget__actions">
+                    <label class="attachment-button" for="excel_file">
+                        <span class="attachment-button__icon" aria-hidden="true">&#128206;</span>
+                        <span id="selectedFileName">Choose .xlsx</span>
+                    </label>
+                    <input class="attachment-button__input" id="excel_file" name="excel_file"
+                           type="file" accept=".xlsx" required>
+                    <button class="btn btn--primary" type="submit">Import</button>
+                </div>
+            </form>
+        </section>
+    </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const fileInput = document.getElementById("excel_file");
+    const selectedFileName = document.getElementById("selectedFileName");
+
+    fileInput.addEventListener("change", () => {
+        selectedFileName.textContent = fileInput.files.length
+            ? fileInput.files[0].name
+            : "Choose .xlsx";
+    });
+</script>
+{% endblock %}

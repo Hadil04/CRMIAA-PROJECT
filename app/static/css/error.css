@@ -1,0 +1,34 @@
+/* ==========================================================================
+   CRMIAA — Error pages (404 / 500)
+   ========================================================================== */
+
+.error-shell {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 24px;
+    gap: 8px;
+}
+
+.error-code {
+    font-size: 5rem;
+    font-weight: 800;
+    line-height: 1;
+    background: var(--brand-gradient);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.error-title {
+    margin: 8px 0 4px;
+    font-size: 1.5rem;
+}
+
+.error-text {
+    margin: 0 0 20px;
+    color: var(--ink-500);
+}

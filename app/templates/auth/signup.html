@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+
+{% block title %}Sign up · CRMIAA{% endblock %}
+{% block body_class %}auth-page{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/login.css') }}">
+{% endblock %}
+
+{% block content %}
+<main class="auth-shell">
+    <section class="auth-card" aria-labelledby="auth-title">
+        <div class="auth-brand">
+            <div class="auth-logo" aria-hidden="true">C</div>
+            <div>
+                <h1 id="auth-title" class="auth-brand__name">CRMIAA</h1>
+                <p class="auth-brand__tag">Create account</p>
+            </div>
+        </div>
+
+        <h2 class="auth-heading">Welcome</h2>
+        <p class="auth-subheading">Create your user account (role is always <strong>User</strong>).</p>
+
+        <form class="auth-form" method="POST" action="{{ url_for('auth.signup') }}" novalidate>
+            <label class="field">
+                <span class="field__label">Username</span>
+                <input class="field__input" type="text" name="username"
+                       autocomplete="username" placeholder="Enter your username"
+                       required autofocus>
+            </label>
+
+            <label class="field">
+                <span class="field__label">Password</span>
+                <span class="field__password">
+                    <input class="field__input" type="password" name="password"
+                           id="password" autocomplete="new-password"
+                           placeholder="Enter your password" required>
+                    <button type="button" class="field__toggle" id="togglePassword"
+                            aria-label="Show password">Show</button>
+                </span>
+            </label>
+
+            <button class="auth-submit" type="submit">Create account</button>
+        </form>
+
+        <p class="auth-foot">
+            Already have an account?
+            <a href="{{ url_for('auth.login') }}">Sign in</a>
+        </p>
+    </section>
+</main>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/login.js') }}"></script>
+{% endblock %}
+

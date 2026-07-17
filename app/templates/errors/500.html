@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Server error · CRMIAA{% endblock %}
+{% block body_class %}error-page{% endblock %}
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/error.css') }}">
+{% endblock %}
+{% block content %}
+<main class="error-shell">
+    <div class="error-code">500</div>
+    <h1 class="error-title">Something went wrong</h1>
+    <p class="error-text">An unexpected error occurred. Please try again later.</p>
+    <a class="btn btn--primary" href="{{ url_for('main.index') }}">Back to home</a>
+</main>
+{% endblock %}

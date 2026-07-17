@@ -1,0 +1,279 @@
+/* ==========================================================================
+   CRMIAA — CRIA admin page
+   ========================================================================== */
+
+.cria-info {
+    margin-top: 28px;
+    background: var(--surface);
+    border: 1px solid var(--ink-100);
+    border-radius: var(--radius);
+    padding: 22px 26px;
+    box-shadow: var(--shadow-sm);
+}
+
+.cria-info__title {
+    margin: 0 0 8px;
+    font-size: 1.08rem;
+    font-weight: 700;
+    color: var(--ink-900);
+}
+
+.cria-info__meta {
+    margin: 0;
+    color: var(--ink-500);
+    font-size: 0.94rem;
+    line-height: 1.6;
+}
+
+.cria-info__meta code {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: var(--ink-100);
+    color: var(--ink-700);
+    font-size: 0.88em;
+}
+
+.cria-tabs {
+    margin-top: 28px;
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 6px;
+    background: var(--surface);
+    border: 1px solid var(--ink-100);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-sm);
+}
+
+.cria-tab {
+    border: 1px solid transparent;
+    background: transparent;
+    color: var(--ink-700);
+    border-radius: var(--radius-sm);
+    padding: 11px 18px;
+    font-weight: 600;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition:
+        background 0.18s ease,
+        color 0.18s ease,
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.cria-tab:hover {
+    background: var(--ink-100);
+    color: var(--brand-600);
+}
+
+.cria-tab:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.22);
+}
+
+.cria-tab.is-active {
+    background: var(--brand-600);
+    border-color: var(--brand-600);
+    color: var(--surface);
+    box-shadow: var(--shadow-sm);
+}
+
+.cria-panel {
+    display: none;
+    margin-top: 18px;
+}
+
+.cria-panel.is-active {
+    display: block;
+    animation: cria-panel-in 0.22s ease;
+}
+
+@keyframes cria-panel-in {
+    from {
+        opacity: 0;
+        transform: translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.cria-form {
+    background: var(--surface);
+    border: 1px solid var(--ink-100);
+    border-radius: var(--radius);
+    padding: 28px;
+    box-shadow: var(--shadow-sm);
+}
+
+.cria-form__title {
+    margin: 0 0 8px;
+    font-size: 1.22rem;
+    font-weight: 700;
+    color: var(--ink-900);
+}
+
+.cria-form__meta {
+    margin: 0 0 22px;
+    color: var(--ink-500);
+    font-size: 0.93rem;
+    line-height: 1.55;
+}
+
+.cria-form__meta code {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: var(--ink-100);
+    color: var(--ink-700);
+    font-size: 0.88em;
+}
+
+.cria-field {
+    margin-bottom: 18px;
+}
+
+.cria-field label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    color: var(--ink-700);
+}
+
+.cria-field input,
+.cria-field textarea,
+.cria-field select {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid var(--ink-300);
+    border-radius: var(--radius-sm);
+    font: inherit;
+    color: var(--ink-900);
+    background: var(--surface);
+    transition:
+        border-color 0.18s ease,
+        box-shadow 0.18s ease;
+}
+
+.cria-field input::placeholder,
+.cria-field textarea::placeholder {
+    color: var(--ink-500);
+    opacity: 0.75;
+}
+
+.cria-field input:hover,
+.cria-field textarea:hover,
+.cria-field select:hover {
+    border-color: var(--brand-400);
+}
+
+.cria-field input:focus,
+.cria-field textarea:focus,
+.cria-field select:focus {
+    outline: none;
+    border-color: var(--brand-500);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+}
+
+.cria-field textarea {
+    min-height: 120px;
+    resize: vertical;
+    line-height: 1.55;
+}
+
+.cria-form .btn--primary {
+    margin-top: 4px;
+}
+
+.cria-result {
+    margin-top: 22px;
+    padding: 18px 20px;
+    border-radius: var(--radius-sm);
+    background: var(--page-bg);
+    border: 1px solid var(--ink-100);
+}
+
+.cria-result__title {
+    margin: 0 0 12px;
+    font-size: 0.82rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-500);
+}
+
+.cria-result p {
+    margin: 0;
+    line-height: 1.6;
+    color: var(--ink-700);
+}
+
+.cria-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    font-size: 0.93rem;
+}
+
+.cria-table th,
+.cria-table td {
+    padding: 12px 14px;
+    border-top: 1px solid var(--ink-100);
+    text-align: left;
+}
+
+.cria-table thead th {
+    background: var(--page-bg);
+    border-top: none;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--ink-500);
+}
+
+.cria-table tbody tr:nth-child(even) {
+    background: var(--page-bg);
+}
+
+.cria-chart {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--ink-100);
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+}
+
+.cria-columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 14px;
+}
+
+.cria-chart-fields[data-chart-type="bar"] .pie-only {
+    display: none;
+}
+
+.cria-chart-fields[data-chart-type="pie"] .bar-only {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .cria-form {
+        padding: 22px 18px;
+    }
+
+    .cria-tabs {
+        flex-direction: column;
+    }
+
+    .cria-tab {
+        width: 100%;
+        text-align: left;
+    }
+}

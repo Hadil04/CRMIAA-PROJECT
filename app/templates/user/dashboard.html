@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block title %}User Dashboard · CRMIAA{% endblock %}
+{% block body_class %}user-page{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+    <header class="topbar">
+        <div class="topbar__brand">
+            <div class="topbar__logo" aria-hidden="true">C</div>
+            <span class="topbar__name">CRMIAA</span>
+        </div>
+        <div class="topbar__actions">
+            <span class="topbar__user">
+                <span class="topbar__avatar" aria-hidden="true">
+                    {{ username[0] | upper }}
+                </span>
+                {{ username }}
+            </span>
+            <a class="btn btn--ghost" href="{{ url_for('auth.logout') }}">Sign out</a>
+        </div>
+    </header>
+
+    <main class="admin-main">
+        <section class="hero">
+            <p class="hero__eyebrow">User Console</p>
+            <h1 class="hero__title">Welcome to CRMIAA</h1>
+            <p class="hero__subtitle">
+                You are signed in as <strong>{{ username }}</strong>.
+            </p>
+        </section>
+
+        <section class="cards" aria-label="Quick sections">
+            <article class="card">
+                <div class="card__icon">👤</div>
+                <h3 class="card__title">My Profile</h3>
+                <p class="card__text">View your personal information.</p>
+                <div class="card__actions">
+                    <span class="card__badge">Coming soon</span>
+                </div>
+            </article>
+
+            <article class="card">
+                <div class="card__icon">🏠</div>
+                <h3 class="card__title">CRM</h3>
+                <p class="card__text">Access CRM pages for regular users.</p>
+                <div class="card__actions">
+                    <span class="card__badge">Coming soon</span>
+                </div>
+            </article>
+        </section>
+    </main>
+</div>
+{% endblock %}
+

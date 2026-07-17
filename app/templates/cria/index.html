@@ -1,0 +1,244 @@
+{% extends "admin/dashboard.html" %}
+
+{% block title %}CRIA · CRMIAA{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/cria.css') }}">
+{% endblock %}
+
+{% block content %}
+<div class="admin-layout">
+    <header class="topbar">
+        <div class="topbar__brand">
+            <div class="topbar__logo" aria-hidden="true">C</div>
+            <span class="topbar__name">CRMIAA</span>
+        </div>
+        <div class="topbar__actions">
+            <span class="topbar__user">
+                <span class="topbar__avatar" aria-hidden="true">
+                    {{ username[0] | upper }}
+                </span>
+                {{ username }}
+            </span>
+            <a class="btn btn--ghost" href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+            <a class="btn btn--ghost" href="{{ url_for('auth.logout') }}">Sign out</a>
+        </div>
+    </header>
+
+    <main class="admin-main">
+        <section class="hero">
+            <p class="hero__eyebrow">Admin Console</p>
+            <h1 class="hero__title">CRIA</h1>
+            <p class="hero__subtitle">
+                Ask questions, filter data, and draw charts from the loaded dataset.
+            </p>
+        </section>
+
+        <section class="cria-info" aria-label="Dataset summary">
+            <h2 class="cria-info__title">Loaded dataset</h2>
+            <p class="cria-info__meta">
+                <strong>{{ row_count }}</strong> row{{ "s" if row_count != 1 else "" }}
+                &middot; columns:
+                {% for column in columns %}
+                    <code>{{ column }}</code>{% if not loop.last %}, {% endif %}
+                {% endfor %}
+            </p>
+        </section>
+
+        <div class="cria-tabs" role="tablist" aria-label="CRIA actions">
+            <button type="button" class="cria-tab{% if active_tab == 'ask' %} is-active{% endif %}"
+                    data-tab="ask" role="tab" aria-selected="{{ 'true' if active_tab == 'ask' else 'false' }}">
+                Ask a question
+            </button>
+            <button type="button" class="cria-tab{% if active_tab == 'filter' %} is-active{% endif %}"
+                    data-tab="filter" role="tab" aria-selected="{{ 'true' if active_tab == 'filter' else 'false' }}">
+                Filter data
+            </button>
+            <button type="button" class="cria-tab{% if active_tab == 'graph' %} is-active{% endif %}"
+                    data-tab="graph" role="tab" aria-selected="{{ 'true' if active_tab == 'graph' else 'false' }}">
+                Draw a graph
+            </button>
+        </div>
+
+        <section id="panel-ask"
+                 class="cria-panel{% if active_tab == 'ask' %} is-active{% endif %}"
+                 role="tabpanel">
+            <form class="cria-form" method="POST" action="{{ url_for('cria.ask') }}">
+                <h2 class="cria-form__title">Ask a question about the data</h2>
+                <p class="cria-form__meta">Your question is masked before being sent to the AI.</p>
+
+                <div class="cria-field">
+                    <label for="question">Question</label>
+                    <textarea id="question" name="question" required
+                              placeholder="e.g. Who earns the most?">{{ ask_question or "" }}</textarea>
+                </div>
+
+                <button class="btn btn--primary" type="submit">Ask</button>
+
+                {% if ask_answer %}
+                <div class="cria-result">
+                    <p class="cria-result__title">Answer</p>
+                    <p>{{ ask_answer }}</p>
+                </div>
+                {% endif %}
+            </form>
+        </section>
+
+        <section id="panel-filter"
+                 class="cria-panel{% if active_tab == 'filter' %} is-active{% endif %}"
+                 role="tabpanel">
+            <form class="cria-form" method="POST" action="{{ url_for('cria.filter_rows') }}">
+                <h2 class="cria-form__title">Filter the data</h2>
+                <p class="cria-form__meta">Use plain English, e.g. <code>salary above 50000</code>.</p>
+
+                <div class="cria-field">
+                    <label for="filter_text">Filter request</label>
+                    <input id="filter_text" name="filter_text" type="text" required
+                           value="{{ filter_text or '' }}"
+                           placeholder="salary above 50000">
+                </div>
+
+                <button class="btn btn--primary" type="submit">Apply filter</button>
+
+                {% if filter_rows is defined %}
+                <div class="cria-result">
+                    <p class="cria-result__title">Filtered rows</p>
+                    {% if filter_rows %}
+                    <table class="cria-table">
+                        <thead>
+                            <tr>
+                                {% for column in filter_columns %}
+                                <th>{{ column }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in filter_rows %}
+                            <tr>
+                                {% for column in filter_columns %}
+                                <td>{{ row[column] }}</td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <p>No matching rows.</p>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </form>
+        </section>
+
+        <section id="panel-graph"
+                 class="cria-panel{% if active_tab == 'graph' %} is-active{% endif %}"
+                 role="tabpanel">
+            <form class="cria-form" method="POST" action="{{ url_for('cria.graph') }}">
+                <h2 class="cria-form__title">Draw a graph</h2>
+                <p class="cria-form__meta">
+                    Available columns:
+                    {% for column in columns %}
+                        <code>{{ column }}</code>{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </p>
+
+                <div class="cria-field">
+                    <label for="chart_type">Chart type</label>
+                    <select id="chart_type" name="chart_type" required>
+                        <option value="bar"{% if chart_type == 'bar' %} selected{% endif %}>Bar chart</option>
+                        <option value="pie"{% if chart_type == 'pie' %} selected{% endif %}>Pie chart</option>
+                    </select>
+                </div>
+
+                <div class="cria-field">
+                    <label for="graph_filter_text">Optional filter (plain English)</label>
+                    <input id="graph_filter_text" name="filter_text" type="text"
+                           value="{{ filter_text or '' }}"
+                           placeholder="e.g. department is Finance">
+                </div>
+
+                <div class="cria-chart-fields" data-chart-type="{{ chart_type or 'bar' }}">
+                    <div class="cria-columns">
+                        <div class="cria-field bar-only">
+                            <label for="x_column">X-axis column</label>
+                            <input id="x_column" name="x_column" type="text"
+                                   value="{{ x_column or '' }}" placeholder="name">
+                        </div>
+                        <div class="cria-field bar-only">
+                            <label for="y_column">Y-axis column (numeric)</label>
+                            <input id="y_column" name="y_column" type="text"
+                                   value="{{ y_column or '' }}" placeholder="salary">
+                        </div>
+                        <div class="cria-field pie-only">
+                            <label for="label_column">Label column</label>
+                            <input id="label_column" name="label_column" type="text"
+                                   value="{{ label_column or '' }}" placeholder="department">
+                        </div>
+                        <div class="cria-field pie-only">
+                            <label for="value_column">Value column (numeric)</label>
+                            <input id="value_column" name="value_column" type="text"
+                                   value="{{ value_column or '' }}" placeholder="salary">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="cria-field">
+                    <label for="title">Chart title (optional)</label>
+                    <input id="title" name="title" type="text"
+                           value="{{ title or '' }}"
+                           placeholder="Leave blank to auto-generate">
+                </div>
+
+                <button class="btn btn--primary" type="submit">Generate chart</button>
+
+                {% if chart_filename %}
+                <div class="cria-result">
+                    <p class="cria-result__title">Generated chart</p>
+                    <img class="cria-chart"
+                         src="{{ url_for('static', filename=chart_filename) }}"
+                         alt="Generated chart">
+                </div>
+                {% endif %}
+            </form>
+        </section>
+    </main>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    const tabs = document.querySelectorAll(".cria-tab");
+    const panels = document.querySelectorAll(".cria-panel");
+    const chartTypeSelect = document.getElementById("chart_type");
+    const chartFields = document.querySelector(".cria-chart-fields");
+
+    tabs.forEach((tab) => {
+        tab.addEventListener("click", () => {
+            const target = tab.dataset.tab;
+
+            tabs.forEach((item) => {
+                const isActive = item.dataset.tab === target;
+                item.classList.toggle("is-active", isActive);
+                item.setAttribute("aria-selected", isActive ? "true" : "false");
+            });
+
+            panels.forEach((panel) => {
+                panel.classList.toggle("is-active", panel.id === `panel-${target}`);
+            });
+        });
+    });
+
+    function syncChartFields() {
+        if (!chartTypeSelect || !chartFields) {
+            return;
+        }
+        chartFields.dataset.chartType = chartTypeSelect.value;
+    }
+
+    if (chartTypeSelect) {
+        chartTypeSelect.addEventListener("change", syncChartFields);
+        syncChartFields();
+    }
+</script>
+{% endblock %}

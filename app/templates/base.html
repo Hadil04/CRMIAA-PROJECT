@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CRMIAA{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    {% block styles %}{% endblock %}
+</head>
+<body class="{% block body_class %}{% endblock %}">
+    {# Flash messages: rendered on every page. #}
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-stack" role="status" aria-live="polite">
+            {% for category, message in messages %}
+            <div class="flash flash--{{ category }}">
+                <span>{{ message }}</span>
+                <button type="button" class="flash__close" aria-label="Dismiss"
+                        onclick="this.parentElement.remove()">&times;</button>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    {% endwith %}
+
+    {# Small auth context (role display). #}
+    {% if session.get('logged_in') %}
+        <div class="flash-stack" style="top:auto; left:auto; right:20px; bottom:20px; transform:none; width:auto;">
+            <div class="flash flash--success" style="box-shadow:none;">
+                <span>
+                    Role: <strong>{{ session.get('role') }}</strong>
+                </span>
+            </div>
+        </div>
+    {% endif %}
+
+    {% block content %}{% endblock %}
+
+
+    {% block scripts %}{% endblock %}
+</body>
+</html>

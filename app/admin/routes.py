@@ -28,6 +28,7 @@ from werkzeug.security import generate_password_hash
 from app.admin import admin_bp
 from app.auth.repository import authenticate
 from app.db import get_connection
+from app.db_settings import apply_db_settings, save_db_settings, settings_have_password
 from app.utils.decorators import login_required, role_required
 
 
@@ -408,3 +409,254 @@ def disable_user(user_id: int):
 
     flash("User disabled.", "success")
     return redirect(f"{admin_bp.url_prefix}/users")
+
+
+# ---------------------------------------------------------------------------
+# Settings — database connection configuration
+# ---------------------------------------------------------------------------
+
+@admin_bp.route("/settings", methods=["GET"])
+@login_required
+@role_required("Admin")
+def settings():
+    """Show the DB settings form, pre-filled from current app config."""
+    cfg = current_app.config
+    return render_template(
+        "admin/settings.html",
+        username=session.get("username", "Admin"),
+        # Form field values — password is never sent back to the browser.
+        db_server=cfg.get("DB_SERVER", ""),
+        db_name=cfg.get("DB_NAME", ""),
+        db_driver=cfg.get("DB_DRIVER", ""),
+        db_username=cfg.get("DB_USERNAME", ""),
+        db_trusted=cfg.get("DB_TRUSTED_CONNECTION", True),
+        db_encrypt=cfg.get("DB_ENCRYPT", "yes"),
+        db_trust_cert=cfg.get("DB_TRUST_SERVER_CERTIFICATE", "yes"),
+        db_timeout=cfg.get("DB_TIMEOUT", 5),
+        has_password=settings_have_password(),
+    )
+
+
+@admin_bp.route("/settings", methods=["POST"])
+@login_required
+@role_required("Admin")
+def settings_save():
+    """Save DB settings to db_settings.json and hot-reload them into config."""
+    trusted = bool(request.form.get("db_trusted_connection"))
+
+    server = request.form.get("db_server", "").strip()
+    db_name = request.form.get("db_name", "").strip()
+    driver = request.form.get("db_driver", "").strip()
+    username = request.form.get("db_username", "").strip()
+    password = request.form.get("db_password", "")  # intentionally no strip
+    encrypt = request.form.get("db_encrypt", "yes").strip()
+    trust_cert = request.form.get("db_trust_server_certificate", "yes").strip()
+    timeout_raw = request.form.get("db_timeout", "5").strip()
+
+    # --- Basic validation -------------------------------------------------
+    errors = []
+    if not server:
+        errors.append("DB Server is required.")
+    if not db_name:
+        errors.append("Database Name is required.")
+    if not driver:
+        errors.append("ODBC Driver is required.")
+    if not trusted and not username:
+        errors.append("Username is required when not using Windows Authentication.")
+    try:
+        timeout = int(timeout_raw)
+        if timeout < 1:
+            raise ValueError
+    except ValueError:
+        errors.append("Timeout must be a positive integer (seconds).")
+        timeout = 5
+
+    if errors:
+        for msg in errors:
+            flash(msg, "error")
+        return redirect(url_for("admin.settings"))
+
+    # --- Build the dict to persist ----------------------------------------
+    to_save = {
+        "DB_SERVER": server,
+        "DB_NAME": db_name,
+        "DB_DRIVER": driver,
+        "DB_USERNAME": username,
+        "DB_TRUSTED_CONNECTION": trusted,
+        "DB_ENCRYPT": encrypt,
+        "DB_TRUST_SERVER_CERTIFICATE": trust_cert,
+        "DB_TIMEOUT": timeout,
+    }
+
+    # Only update the stored password when the user actually typed one.
+    # An empty field means "keep whatever is already saved".
+    if password:
+        to_save["DB_PASSWORD"] = password
+
+    # --- Persist + hot-reload into the live Flask config ------------------
+    save_db_settings(to_save)
+    apply_db_settings(current_app._get_current_object())
+
+    flash("Settings saved successfully.", "success")
+    return redirect(url_for("admin.settings"))
+
+
+@admin_bp.route("/settings/test-connection", methods=["POST"])
+@login_required
+@role_required("Admin")
+def settings_test_connection():
+    """Try opening a pyodbc connection with the current config and report the result."""
+    try:
+        with get_connection() as conn:
+            cur = conn.cursor()
+            cur.execute("SELECT 1")          # cheapest possible round-trip
+            cur.fetchone()
+        flash(
+            f"Connection successful — reached "
+            f"[{current_app.config.get('DB_SERVER')}] / "
+            f"{current_app.config.get('DB_NAME')}.",
+            "success",
+        )
+    except pyodbc.Error as exc:
+        # Surface the exact ODBC error so the admin can diagnose it.
+        flash(f"Connection failed: {exc}", "error")
+    except Exception as exc:
+        flash(f"Unexpected error: {exc}", "error")
+
+    return redirect(url_for("admin.settings"))
+
+
+# ---------------------------------------------------------------------------
+# Employees import — separate from the Users import above
+# ---------------------------------------------------------------------------
+
+def _parse_salary(raw: str) -> int | None:
+    """Convert a raw cell value to a non-negative integer salary.
+
+    Returns None if the value is missing, non-numeric, or negative.
+    """
+    cleaned = raw.strip().replace(",", "").replace(" ", "")
+    if not cleaned:
+        return None
+    try:
+        value = int(float(cleaned))   # accept "50000.0" from Excel number cells
+        if value < 0:
+            return None
+        return value
+    except (ValueError, OverflowError):
+        return None
+
+
+@admin_bp.route("/reports/import-employees", methods=["POST"])
+@login_required
+@role_required("Admin")
+def import_employees():
+    """Import employee CRM records from an uploaded Excel workbook (Admin only).
+
+    Required columns (case-insensitive): Name, Department, Salary.
+    Each valid row is inserted into dbo.Employees.
+    This route is completely independent of import_report_users.
+    """
+    upload = request.files.get("employees_file")
+    if not upload or not upload.filename:
+        flash("Please choose an Excel file to import.", "warning")
+        return redirect(url_for("admin.reports"))
+
+    if not upload.filename.strip().lower().endswith(".xlsx"):
+        flash("Only .xlsx Excel files are supported.", "warning")
+        return redirect(url_for("admin.reports"))
+
+    if upload.mimetype not in ALLOWED_EXCEL_MIMETYPES:
+        flash("The uploaded file does not look like a valid .xlsx file.", "warning")
+        return redirect(url_for("admin.reports"))
+
+    try:
+        workbook = load_workbook(upload.stream, read_only=True, data_only=True)
+    except (BadZipFile, InvalidFileException, OSError, ValueError):
+        flash(
+            "The uploaded file could not be opened as a valid Excel workbook.",
+            "error",
+        )
+        return redirect(url_for("admin.reports"))
+
+    worksheet = workbook.active
+    rows = worksheet.iter_rows(values_only=True)
+
+    headers = next(rows, None)
+    if not headers:
+        flash("The Excel file is empty.", "warning")
+        return redirect(url_for("admin.reports"))
+
+    header_map = {
+        _normalize_header(h): idx
+        for idx, h in enumerate(headers)
+        if _normalize_header(h)
+    }
+
+    required_columns = {"name", "department", "salary"}
+    missing_columns = sorted(required_columns - set(header_map))
+    if missing_columns:
+        flash(
+            "Missing required column(s): " + ", ".join(c.title() for c in missing_columns),
+            "warning",
+        )
+        return redirect(url_for("admin.reports"))
+
+    imported_count = 0
+    skipped = []
+
+    with get_connection() as conn:
+        cur = conn.cursor()
+
+        for excel_row_number, row in enumerate(rows, start=2):
+            name = _clean_cell(_row_value(row, header_map, "name"))
+            department = _clean_cell(_row_value(row, header_map, "department"))
+            salary_raw = _clean_cell(_row_value(row, header_map, "salary"))
+
+            # --- Row-level validation -----------------------------------
+            if not name:
+                skipped.append(f"row {excel_row_number} missing Name")
+                continue
+            if len(name) > 100:
+                skipped.append(f"row {excel_row_number} Name is too long (max 100)")
+                continue
+            if not department:
+                skipped.append(f"row {excel_row_number} missing Department")
+                continue
+            if len(department) > 100:
+                skipped.append(
+                    f"row {excel_row_number} Department is too long (max 100)"
+                )
+                continue
+
+            salary = _parse_salary(salary_raw)
+            if salary is None:
+                skipped.append(
+                    f"row {excel_row_number} Salary is missing or not a valid "
+                    f"non-negative integer"
+                )
+                continue
+
+            # --- Insert -------------------------------------------------
+            cur.execute(
+                "INSERT INTO dbo.Employees (Name, Department, Salary) "
+                "VALUES (?, ?, ?)",
+                name, department, salary,
+            )
+            imported_count += 1
+
+        conn.commit()
+
+    if skipped:
+        preview = "; ".join(skipped[:5])
+        if len(skipped) > 5:
+            preview += f"; and {len(skipped) - 5} more"
+        flash(
+            f"{imported_count} employee(s) imported, "
+            f"{len(skipped)} skipped: {preview}.",
+            "warning",
+        )
+    else:
+        flash(f"{imported_count} employee(s) imported successfully.", "success")
+
+    return redirect(url_for("admin.reports"))

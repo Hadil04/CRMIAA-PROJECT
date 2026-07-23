@@ -1,11 +1,12 @@
 """CRIA CLI — interactive menu for data questions, filtering, and charts."""
 
+import sys
 from pathlib import Path
 
 import pandas as pd
 
 from app.cria.ai_client import ask_ai
-from app.cria.data_loader import load_csv
+from app.cria.data_loader import load_csv, load_from_db
 from app.cria.filter import filter_data, parse_filter_request
 from app.cria.graph_maker import make_bar_chart, make_pie_chart
 
@@ -14,10 +15,38 @@ SAMPLE_CSV = Path(__file__).with_name("sample.csv")
 
 
 def load_data() -> pd.DataFrame:
-    """Load the sample CSV and print a short confirmation."""
+    """Load CRIA data, preferring dbo.Employees over the sample CSV.
+
+    Strategy (same as routes.py):
+        1. Create a Flask app context so get_connection() works.
+        2. Call load_from_db(); on success, print the source and return.
+        3. On any error, print a LOUD warning and fall back to sample.csv.
+        4. If the CSV also fails, re-raise.
+    """
+    # Import here to avoid circular imports at module load time.
+    from app import create_app
+
+    app = create_app()
+    with app.app_context():
+        try:
+            df = load_from_db()
+            source = (
+                f"SQL Server — dbo.Employees "
+                f"({len(df)} row{'s' if len(df) != 1 else ''})"
+            )
+            print(f"[CRIA] Data source: {source}")
+            return df
+        except Exception as db_exc:
+            print(
+                f"\n[CRIA] WARNING: Could not load data from database "
+                f"({db_exc!s}), falling back to sample.csv\n",
+                file=sys.stderr,
+                flush=True,
+            )
+
+    # Fallback — outside the app context; load_csv needs no Flask context.
     df = load_csv(str(SAMPLE_CSV))
-    columns = ", ".join(str(name) for name in df.columns)
-    print(f"Loaded {len(df)} rows with columns: {columns}\n")
+    print(f"[CRIA] Data source: sample.csv (fallback — {len(df)} rows)")
     return df
 
 
@@ -42,16 +71,16 @@ def read_menu_choice() -> str | None:
 def prompt_filter(df: pd.DataFrame) -> pd.DataFrame | None:
     """Prompt for a filter request and return the filtered DataFrame, or None to cancel."""
     while True:
-        request = input(
+        filter_request = input(
             "\nEnter a filter request (e.g. 'salary above 50000'), "
             "or press Enter to cancel: "
         ).strip()
-        if not request:
+        if not filter_request:
             print("Cancelled.")
             return None
 
         try:
-            parsed = parse_filter_request(request)
+            parsed = parse_filter_request(filter_request)
             filtered = filter_data(df, **parsed)
             print("\nFiltered rows:")
             if filtered.empty:
@@ -109,7 +138,7 @@ def handle_graph(df: pd.DataFrame) -> None:
         print("Invalid chart type.")
         return
 
-    available = ", ".join(str(name) for name in chart_df.columns)
+    available = ", ".join(str(col) for col in chart_df.columns)
     print(f"\nAvailable columns: {available}")
 
     if chart_choice == "1":

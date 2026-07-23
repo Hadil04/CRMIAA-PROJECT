@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Admin sign in - CRMIAA{% endblock %}
+{% block title %}Admin sign in · CRMIAA{% endblock %}
 {% block body_class %}auth-page{% endblock %}
 
 {% block styles %}
@@ -10,6 +10,7 @@
 {% block content %}
 <main class="auth-shell">
     <section class="auth-card" aria-labelledby="auth-title">
+
         <div class="auth-brand">
             <div class="auth-logo" aria-hidden="true">C</div>
             <div>
@@ -18,39 +19,44 @@
             </div>
         </div>
 
-        <h2 class="auth-heading">Admin sign in</h2>
-        <p class="auth-subheading">Sign in with an administrator account.</p>
+        <div class="auth-body">
+            <div class="auth-intro">
+                <h2 class="auth-heading">Admin sign in</h2>
+                <p class="auth-subheading">Sign in with your administrator credentials.</p>
+            </div>
 
-        <form class="auth-form" method="POST" action="{{ url_for('admin.login') }}" novalidate>
-            {% if request.args.get('next') %}
-            <input type="hidden" name="next" value="{{ request.args.get('next') }}">
-            {% endif %}
+            <form class="auth-form" method="POST" action="{{ url_for('admin.login') }}" novalidate>
+                {% if request.args.get('next') %}
+                <input type="hidden" name="next" value="{{ request.args.get('next') }}">
+                {% endif %}
 
-            <label class="field">
-                <span class="field__label">Username</span>
-                <input class="field__input" type="text" name="username"
-                       autocomplete="username" placeholder="Enter your username"
-                       required autofocus>
-            </label>
+                <label class="field">
+                    <span class="field__label">Username</span>
+                    <input class="field__input" type="text" name="username"
+                           autocomplete="username" placeholder="Enter your username"
+                           required autofocus>
+                </label>
 
-            <label class="field">
-                <span class="field__label">Password</span>
-                <span class="field__password">
-                    <input class="field__input" type="password" name="password"
-                           id="password" autocomplete="current-password"
-                           placeholder="Enter your password" required>
-                    <button type="button" class="field__toggle" id="togglePassword"
-                            aria-label="Show password">Show</button>
-                </span>
-            </label>
+                <label class="field">
+                    <span class="field__label">Password</span>
+                    <span class="field__password">
+                        <input class="field__input" type="password" name="password"
+                               id="password" autocomplete="current-password"
+                               placeholder="Enter your password" required>
+                        <button type="button" class="field__toggle" id="togglePassword"
+                                aria-label="Show password">Show</button>
+                    </span>
+                </label>
 
-            <button class="auth-submit" type="submit">Admin sign in</button>
-        </form>
+                <button class="auth-submit" type="submit">Sign in as Admin</button>
+            </form>
+        </div>
 
         <p class="auth-foot">
             Not an admin?
             <a href="{{ url_for('auth.login') }}">User sign-in</a>
         </p>
+
     </section>
 </main>
 {% endblock %}

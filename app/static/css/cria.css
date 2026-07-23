@@ -1,42 +1,51 @@
 /* ==========================================================================
-   CRMIAA — CRIA admin page
+   CRMIAA — CRIA page
    ========================================================================== */
 
+/* ---- Dataset info banner ------------------------------------------------ */
 .cria-info {
     margin-top: 28px;
     background: var(--surface);
     border: 1px solid var(--ink-100);
+    border-left: 4px solid var(--brand-400);   /* accent edge — same pattern as flash */
     border-radius: var(--radius);
-    padding: 22px 26px;
+    padding: 20px 26px;
     box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .cria-info__title {
-    margin: 0 0 8px;
-    font-size: 1.08rem;
+    margin: 0;
+    font-size: 0.82rem;
     font-weight: 700;
-    color: var(--ink-900);
+    text-transform: uppercase;
+    letter-spacing: 0.07em;
+    color: var(--ink-500);                     /* label treatment — matches table headers */
 }
 
 .cria-info__meta {
     margin: 0;
-    color: var(--ink-500);
-    font-size: 0.94rem;
-    line-height: 1.6;
+    color: var(--ink-700);
+    font-size: 0.95rem;
+    line-height: 1.65;
 }
 
 .cria-info__meta code {
-    padding: 2px 7px;
+    padding: 2px 8px;
     border-radius: 6px;
     background: var(--ink-100);
-    color: var(--ink-700);
-    font-size: 0.88em;
+    color: var(--brand-600);
+    font-size: 0.85em;
+    font-weight: 600;
 }
 
+/* ---- Tab bar ------------------------------------------------------------ */
 .cria-tabs {
     margin-top: 28px;
     display: flex;
-    gap: 10px;
+    gap: 6px;
     flex-wrap: wrap;
     padding: 6px;
     background: var(--surface);
@@ -46,14 +55,19 @@
 }
 
 .cria-tab {
+    flex: 1;                                   /* tabs share width evenly */
+    min-width: 120px;
     border: 1px solid transparent;
     background: transparent;
-    color: var(--ink-700);
+    color: var(--ink-500);
     border-radius: var(--radius-sm);
-    padding: 11px 18px;
+    padding: 10px 18px;
+    font-family: inherit;
     font-weight: 600;
-    font-size: 0.92rem;
+    font-size: 0.9rem;
     cursor: pointer;
+    text-align: center;
+    white-space: nowrap;
     transition:
         background 0.18s ease,
         color 0.18s ease,
@@ -78,20 +92,21 @@
     box-shadow: var(--shadow-sm);
 }
 
+/* ---- Tab panels --------------------------------------------------------- */
 .cria-panel {
     display: none;
-    margin-top: 18px;
+    margin-top: 16px;
 }
 
 .cria-panel.is-active {
     display: block;
-    animation: cria-panel-in 0.22s ease;
+    animation: cria-panel-in 0.22s cubic-bezier(0.22, 0.61, 0.36, 1) both;
 }
 
 @keyframes cria-panel-in {
     from {
         opacity: 0;
-        transform: translateY(6px);
+        transform: translateY(8px);
     }
     to {
         opacity: 1;
@@ -99,45 +114,54 @@
     }
 }
 
+/* ---- Form card ---------------------------------------------------------- */
 .cria-form {
     background: var(--surface);
     border: 1px solid var(--ink-100);
     border-radius: var(--radius);
-    padding: 28px;
+    padding: 32px;
     box-shadow: var(--shadow-sm);
 }
 
 .cria-form__title {
-    margin: 0 0 8px;
-    font-size: 1.22rem;
+    margin: 0 0 6px;
+    font-size: 1.15rem;
     font-weight: 700;
     color: var(--ink-900);
+    letter-spacing: -0.01em;
 }
 
 .cria-form__meta {
-    margin: 0 0 22px;
+    margin: 0 0 24px;
     color: var(--ink-500);
-    font-size: 0.93rem;
-    line-height: 1.55;
+    font-size: 0.9rem;
+    line-height: 1.6;
 }
 
 .cria-form__meta code {
-    padding: 2px 7px;
+    padding: 2px 8px;
     border-radius: 6px;
     background: var(--ink-100);
-    color: var(--ink-700);
-    font-size: 0.88em;
+    color: var(--brand-600);
+    font-size: 0.85em;
+    font-weight: 600;
 }
 
+/* ---- Form fields -------------------------------------------------------- */
 .cria-field {
-    margin-bottom: 18px;
+    margin-bottom: 20px;
+}
+
+.cria-field:last-of-type {
+    margin-bottom: 0;
 }
 
 .cria-field label {
     display: block;
-    margin-bottom: 8px;
+    margin-bottom: 7px;
     font-weight: 600;
-    font-size: 0.88rem;
+    font-size: 0.84rem;
+    letter-spacing: 0.01em;
     color: var(--ink-700);
 }
 
@@ -146,26 +170,29 @@
 .cria-field select {
     width: 100%;
     padding: 11px 14px;
-    border: 1px solid var(--ink-300);
+    border: 1.5px solid var(--ink-300);
     border-radius: var(--radius-sm);
     font: inherit;
+    font-size: 0.95rem;
     color: var(--ink-900);
     background: var(--surface);
     transition:
         border-color 0.18s ease,
-        box-shadow 0.18s ease;
+        box-shadow 0.18s ease,
+        background 0.18s ease;
 }
 
 .cria-field input::placeholder,
 .cria-field textarea::placeholder {
     color: var(--ink-500);
-    opacity: 0.75;
+    opacity: 0.7;
 }
 
 .cria-field input:hover,
 .cria-field textarea:hover,
 .cria-field select:hover {
     border-color: var(--brand-400);
+    background: var(--page-bg);
 }
 
 .cria-field input:focus,
@@ -173,88 +200,116 @@
 .cria-field select:focus {
     outline: none;
     border-color: var(--brand-500);
+    background: var(--surface);
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
 }
 
 .cria-field textarea {
-    min-height: 120px;
+    min-height: 130px;
     resize: vertical;
-    line-height: 1.55;
+    line-height: 1.6;
 }
 
 .cria-form .btn--primary {
-    margin-top: 4px;
+    margin-top: 8px;
 }
 
+/* ---- Column grid for chart fields -------------------------------------- */
+.cria-columns {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+/* ---- Result boxes ------------------------------------------------------- */
 .cria-result {
-    margin-top: 22px;
-    padding: 18px 20px;
+    margin-top: 24px;
+    padding: 20px 22px;
     border-radius: var(--radius-sm);
     background: var(--page-bg);
     border: 1px solid var(--ink-100);
+    border-left: 4px solid var(--brand-400);   /* accent matching info bar */
 }
 
 .cria-result__title {
     margin: 0 0 12px;
-    font-size: 0.82rem;
+    font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.07em;
     color: var(--ink-500);
 }
 
 .cria-result p {
     margin: 0;
-    line-height: 1.6;
+    line-height: 1.65;
     color: var(--ink-700);
+    font-size: 0.95rem;
 }
 
-.cria-table {
-    width: 100%;
-    border-collapse: collapse;
-    background: var(--surface);
+/* Filter result table wrapper */
+.cria-result__table {
+    margin-top: 12px;
     border-radius: var(--radius-sm);
     overflow: hidden;
-    font-size: 0.93rem;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* ---- Inline filter result table ---------------------------------------- */
+.cria-table {
+    width: 100%;
+    min-width: 400px;
+    border-collapse: collapse;
+    background: var(--surface);
+    font-size: 0.9rem;
 }
 
 .cria-table th,
 .cria-table td {
-    padding: 12px 14px;
+    padding: 12px 16px;
     border-top: 1px solid var(--ink-100);
     text-align: left;
+    vertical-align: middle;
 }
 
 .cria-table thead th {
     background: var(--page-bg);
     border-top: none;
-    font-size: 0.78rem;
+    border-bottom: 2px solid var(--ink-100);
+    font-size: 0.75rem;
     font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
+    letter-spacing: 0.07em;
     color: var(--ink-500);
+    white-space: nowrap;
+}
+
+.cria-table tbody tr {
+    transition: background 0.12s ease;
 }
 
 .cria-table tbody tr:nth-child(even) {
     background: var(--page-bg);
 }
 
+.cria-table tbody tr:hover {
+    background: var(--ink-100);
+}
+
+/* ---- Generated chart ---------------------------------------------------- */
 .cria-chart {
     display: block;
     max-width: 100%;
     height: auto;
-    border-radius: var(--radius-sm);
+    margin-top: 8px;
+    border-radius: var(--radius);
     border: 1px solid var(--ink-100);
     background: var(--surface);
     box-shadow: var(--shadow-sm);
 }
 
-.cria-columns {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 14px;
-}
-
+/* ---- Show/hide fields by chart type ------------------------------------ */
 .cria-chart-fields[data-chart-type="bar"] .pie-only {
     display: none;
 }
@@ -263,17 +318,24 @@
     display: none;
 }
 
-@media (max-width: 768px) {
+/* ---- Responsive --------------------------------------------------------- */
+@media (max-width: 640px) {
     .cria-form {
         padding: 22px 18px;
     }
 
     .cria-tabs {
         flex-direction: column;
+        gap: 4px;
     }
 
     .cria-tab {
         width: 100%;
         text-align: left;
+        flex: none;
+    }
+
+    .cria-columns {
+        grid-template-columns: 1fr;
     }
 }

@@ -9,9 +9,10 @@ Commands:
         Check the database connection and show which server/db you're on.
 
     python manage.py init-db
-        Create the `Users` table in the configured database if it doesn't exist.
-        (Assumes the database itself already exists — create it in SSMS or with
-        database/schema.sql.)
+        Create the `Users` table if it doesn't exist.
+
+    python manage.py init-employees-table
+        Create the `Employees` table (CRIA data source) if it doesn't exist.
 
     python manage.py create-admin [username] [password] [role]
         Create OR update an admin account with a securely hashed password.
@@ -19,6 +20,9 @@ Commands:
 
     python manage.py list-users
         List the accounts currently in the Users table.
+
+    python manage.py list-employees
+        List the rows currently in the Employees table.
 """
 import sys
 
@@ -40,6 +44,19 @@ BEGIN
         IsActive     BIT            NOT NULL CONSTRAINT DF_Users_IsActive  DEFAULT (1),
         CreatedAt    DATETIME2      NOT NULL CONSTRAINT DF_Users_CreatedAt DEFAULT (SYSUTCDATETIME()),
         CONSTRAINT UQ_Users_Username UNIQUE (Username)
+    );
+END
+"""
+
+_CREATE_EMPLOYEES_TABLE = """
+IF OBJECT_ID('dbo.Employees', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.Employees (
+        Id           INT IDENTITY(1,1) CONSTRAINT PK_Employees PRIMARY KEY,
+        Name         NVARCHAR(100) NOT NULL,
+        Department   NVARCHAR(100) NOT NULL,
+        Salary       INT           NOT NULL,
+        CreatedAt    DATETIME2     NOT NULL CONSTRAINT DF_Employees_CreatedAt DEFAULT (SYSUTCDATETIME())
     );
 END
 """
@@ -66,6 +83,13 @@ def cmd_init_db():
         conn.cursor().execute(_CREATE_USERS_TABLE)
         conn.commit()
     print("Users table is ready.")
+
+
+def cmd_init_employees_table():
+    with get_connection() as conn:
+        conn.cursor().execute(_CREATE_EMPLOYEES_TABLE)
+        conn.commit()
+    print("Employees table is ready.")
 
 
 def cmd_create_admin(username="hadil", password="hadil123", role="Admin"):
@@ -108,11 +132,33 @@ def cmd_list_users():
         print(f"{r[0]:<4} {r[1]:<20} {r[2]:<12} {str(bool(r[3])):<7} {r[4]}")
 
 
+def cmd_list_employees():
+    with get_connection() as conn:
+        cur = conn.cursor()
+        try:
+            cur.execute(
+                "SELECT Id, Name, Department, Salary, CreatedAt "
+                "FROM Employees ORDER BY Id"
+            )
+            rows = cur.fetchall()
+        except pyodbc.Error:
+            print("Employees table not found — run: python manage.py init-employees-table")
+            return
+    if not rows:
+        print("No employees found.")
+        return
+    print(f"{'Id':<4} {'Name':<20} {'Department':<18} {'Salary':>10}  CreatedAt")
+    for r in rows:
+        print(f"{r[0]:<4} {r[1]:<20} {r[2]:<18} {str(r[3]):>10}  {r[4]}")
+
+
 COMMANDS = {
-    "test-db": cmd_test_db,
-    "init-db": cmd_init_db,
-    "create-admin": cmd_create_admin,
-    "list-users": cmd_list_users,
+    "test-db":               cmd_test_db,
+    "init-db":               cmd_init_db,
+    "init-employees-table":  cmd_init_employees_table,
+    "create-admin":          cmd_create_admin,
+    "list-users":            cmd_list_users,
+    "list-employees":        cmd_list_employees,
 }
 
 

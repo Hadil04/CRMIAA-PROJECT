@@ -4,72 +4,95 @@
 
 {% block content %}
 <div class="admin-layout">
+
     <header class="topbar">
-        <div class="topbar__brand">
+        <a class="topbar__brand" href="{{ url_for('admin.dashboard') }}" aria-label="CRMIAA home">
             <div class="topbar__logo" aria-hidden="true">C</div>
             <span class="topbar__name">CRMIAA</span>
-        </div>
+        </a>
         <div class="topbar__actions">
             <span class="topbar__user">
-                <span class="topbar__avatar" aria-hidden="true">
-                    {{ username[0] | upper }}
-                </span>
+                <span class="topbar__avatar" aria-hidden="true">{{ username[0] | upper }}</span>
                 {{ username }}
             </span>
-            <a class="btn btn--ghost" href="{{ url_for('admin.dashboard') }}">Dashboard</a>
-            <a class="btn btn--ghost" href="{{ url_for('auth.logout') }}">Sign out</a>
+            <a class="btn btn--ghost btn--sm" href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+            <a class="btn btn--ghost btn--sm" href="{{ url_for('auth.logout') }}">Sign out</a>
         </div>
     </header>
 
     <main class="admin-main">
-        <section class="hero">
+
+        <section class="hero" aria-label="Page header">
             <p class="hero__eyebrow">Admin Console</p>
             <h1 class="hero__title">Users Management</h1>
             <p class="hero__subtitle">Promote / demote roles and disable users.</p>
         </section>
 
-        <section class="table-shell page-section" aria-label="Users table">
-            <table class="data-table">
-                <thead>
-                <tr>
-                    <th>Id</th>
-                    <th>Username</th>
-                    <th>Role</th>
-                    <th>Active</th>
-                    <th>Actions</th>
-                </tr>
-                </thead>
-                <tbody>
-                {% for u in users %}
-                <tr>
-                    <td>{{ u.id }}</td>
-                    <td><strong>{{ u.username }}</strong></td>
-                    <td>{{ u.role }}</td>
-                    <td>{{ 'Yes' if u.is_active else 'No' }}</td>
-                    <td>
-                        <div class="data-table__actions">
-                            {% if u.role == 'Admin' %}
-                                <form method="POST" action="{{ url_for('admin.toggle_user_role', user_id=u.id) }}">
-                                    <input type="hidden" name="action" value="demote" />
-                                    <button class="btn btn--ghost btn--sm" type="submit">Demote to User</button>
-                                </form>
-                            {% else %}
-                                <form method="POST" action="{{ url_for('admin.toggle_user_role', user_id=u.id) }}">
-                                    <input type="hidden" name="action" value="promote" />
-                                    <button class="btn btn--primary btn--sm" type="submit">Promote to Admin</button>
-                                </form>
-                            {% endif %}
+        <section class="page-section" aria-labelledby="users-heading">
+            <div class="page-section__header">
+                <h2 class="page-section__title" id="users-heading">All users</h2>
+                <p class="page-section__meta">
+                    {{ users|length }} account{{ "s" if users|length != 1 else "" }} in the system.
+                </p>
+            </div>
 
-                            <form method="POST" action="{{ url_for('admin.disable_user', user_id=u.id) }}">
-                                <button class="btn btn--ghost btn--sm" type="submit">Disable</button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-                </tbody>
-            </table>
+            <div class="table-shell">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">ID</th>
+                            <th scope="col">Username</th>
+                            <th scope="col">Role</th>
+                            <th scope="col">Active</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for u in users %}
+                        <tr>
+                            <td>{{ u.id }}</td>
+                            <td class="username-cell">{{ u.username }}</td>
+                            <td>
+                                {% if u.role == 'Admin' %}
+                                    <span class="role-pill role-pill--admin">{{ u.role }}</span>
+                                {% else %}
+                                    <span class="role-pill role-pill--user">{{ u.role }}</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if u.is_active %}
+                                    <span class="status-pill status-pill--ok">Yes</span>
+                                {% else %}
+                                    <span class="status-pill status-pill--muted">No</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="data-table__actions">
+                                    {% if u.role == 'Admin' %}
+                                        <form method="POST" action="{{ url_for('admin.toggle_user_role', user_id=u.id) }}">
+                                            <input type="hidden" name="action" value="demote" />
+                                            <button class="btn btn--ghost btn--sm" type="submit">Demote to User</button>
+                                        </form>
+                                    {% else %}
+                                        <form method="POST" action="{{ url_for('admin.toggle_user_role', user_id=u.id) }}">
+                                            <input type="hidden" name="action" value="promote" />
+                                            <button class="btn btn--primary btn--sm" type="submit">Promote to Admin</button>
+                                        </form>
+                                    {% endif %}
+
+                                    <form method="POST" action="{{ url_for('admin.disable_user', user_id=u.id) }}">
+                                        <button class="btn btn--danger btn--sm" type="submit">Disable</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
         </section>
+
     </main>
 </div>
 {% endblock %}

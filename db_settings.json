@@ -1,0 +1,10 @@
+{
+  "DB_SERVER": ".\\SQLEXPRESS",
+  "DB_NAME": "CRMIAA",
+  "DB_DRIVER": "ODBC Driver 18 for SQL Server",
+  "DB_USERNAME": "",
+  "DB_TRUSTED_CONNECTION": true,
+  "DB_ENCRYPT": "yes",
+  "DB_TRUST_SERVER_CERTIFICATE": "yes",
+  "DB_TIMEOUT": 5
+}

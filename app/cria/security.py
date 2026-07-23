@@ -32,7 +32,13 @@ class SensitiveDataMasker:
 
         for word in self.sensitive_words:
             fake_code = self._get_or_create_fake_code(word)
-            masked_text = self._replace_word(masked_text, word, fake_code)
+            # ignore_case=True: without this, "ahmed" (lowercase) would never
+            # match "Ahmed" here, and would then also be skipped by the typo
+            # pass below (which treats case-insensitive exact matches as
+            # "already handled") -- leaving it unmasked entirely.
+            masked_text = self._replace_word(
+                masked_text, word, fake_code, ignore_case=True
+            )
 
         # Second pass: catch typos of sensitive words that weren't matched
         # exactly above (e.g. "Ahled" for "Ahmed", "finace" for "salary"/etc).
@@ -62,9 +68,11 @@ class SensitiveDataMasker:
         result = text
 
         for token in tokens:
-            # Skip tokens that are already fake codes or exact sensitive words.
+            # Skip tokens that are already fake codes.
             if token in self.mapping.values():
                 continue
+            # Skip tokens that exactly match a sensitive word (any case) --
+            # the first pass above already handles those.
             if any(token.lower() == w.lower() for w in self.sensitive_words):
                 continue
 
@@ -81,7 +89,7 @@ class SensitiveDataMasker:
                 w for w in self.sensitive_words if w.lower() == close[0]
             )
             fake_code = self._get_or_create_fake_code(matched_word)
-            result = self._replace_word(result, token, fake_code)
+            result = self._replace_word(result, token, fake_code, ignore_case=True)
 
         return result
 

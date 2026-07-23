@@ -25,8 +25,8 @@
 
     {# Small auth context (role display). #}
     {% if session.get('logged_in') %}
-        <div class="flash-stack" style="top:auto; left:auto; right:20px; bottom:20px; transform:none; width:auto;">
-            <div class="flash flash--success" style="box-shadow:none;">
+        <div class="flash-stack session-badge-stack" role="status" aria-live="polite">
+            <div class="flash flash--success session-badge">
                 <span>
                     Role: <strong>{{ session.get('role') }}</strong>
                 </span>

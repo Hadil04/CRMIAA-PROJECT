@@ -18,6 +18,11 @@ def create_app(config_class=Config):
     app = Flask(__name__)
     app.config.from_object(config_class)
 
+    # Merge any runtime DB settings saved via the admin Settings page.
+    # These override the .env values loaded by Config above.
+    from app.db_settings import apply_db_settings
+    apply_db_settings(app)
+
     register_blueprints(app)
     register_error_handlers(app)
 

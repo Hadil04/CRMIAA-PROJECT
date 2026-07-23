@@ -10,6 +10,7 @@
 {% block content %}
 <main class="auth-shell">
     <section class="auth-card" aria-labelledby="auth-title">
+
         <div class="auth-brand">
             <div class="auth-logo" aria-hidden="true">C</div>
             <div>
@@ -18,34 +19,38 @@
             </div>
         </div>
 
-        <h2 class="auth-heading">Welcome back</h2>
-        <p class="auth-subheading">Sign in to continue to your dashboard.</p>
+        <div class="auth-body">
+            <div class="auth-intro">
+                <h2 class="auth-heading">Welcome back</h2>
+                <p class="auth-subheading">Sign in to continue to your dashboard.</p>
+            </div>
 
-        <form class="auth-form" method="POST" action="{{ url_for('auth.login') }}" novalidate>
-            {% if request.args.get('next') %}
-            <input type="hidden" name="next" value="{{ request.args.get('next') }}">
-            {% endif %}
+            <form class="auth-form" method="POST" action="{{ url_for('auth.login') }}" novalidate>
+                {% if request.args.get('next') %}
+                <input type="hidden" name="next" value="{{ request.args.get('next') }}">
+                {% endif %}
 
-            <label class="field">
-                <span class="field__label">Username</span>
-                <input class="field__input" type="text" name="username"
-                       autocomplete="username" placeholder="Enter your username"
-                       required autofocus>
-            </label>
+                <label class="field">
+                    <span class="field__label">Username</span>
+                    <input class="field__input" type="text" name="username"
+                           autocomplete="username" placeholder="Enter your username"
+                           required autofocus>
+                </label>
 
-            <label class="field">
-                <span class="field__label">Password</span>
-                <span class="field__password">
-                    <input class="field__input" type="password" name="password"
-                           id="password" autocomplete="current-password"
-                           placeholder="Enter your password" required>
-                    <button type="button" class="field__toggle" id="togglePassword"
-                            aria-label="Show password">Show</button>
-                </span>
-            </label>
+                <label class="field">
+                    <span class="field__label">Password</span>
+                    <span class="field__password">
+                        <input class="field__input" type="password" name="password"
+                               id="password" autocomplete="current-password"
+                               placeholder="Enter your password" required>
+                        <button type="button" class="field__toggle" id="togglePassword"
+                                aria-label="Show password">Show</button>
+                    </span>
+                </label>
 
-            <button class="auth-submit" type="submit">Sign in</button>
-        </form>
+                <button class="auth-submit" type="submit">Sign in</button>
+            </form>
+        </div>
 
         <div class="auth-foot auth-links">
             <p>
@@ -57,6 +62,7 @@
                 <a href="{{ url_for('admin.login') }}">Sign in here</a>
             </p>
         </div>
+
     </section>
 </main>
 {% endblock %}

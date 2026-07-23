@@ -1,7 +1,8 @@
 -- ==========================================================================
 -- CRMIAA — Database schema
 -- Run this in SQL Server Management Studio (SSMS) or via sqlcmd on the target
--- machine. It creates the CRMIAA database (if missing) and the Users table.
+-- machine. It creates the CRMIAA database (if missing) and all application
+-- tables.
 --
 -- After running this, create the admin account with a *hashed* password:
 --     python manage.py create-admin hadil hadil123 Admin
@@ -15,6 +16,7 @@ GO
 USE CRMIAA;
 GO
 
+-- ---- Users ---------------------------------------------------------------
 IF OBJECT_ID('dbo.Users', 'U') IS NULL
 BEGIN
     CREATE TABLE dbo.Users (
@@ -25,6 +27,21 @@ BEGIN
         IsActive     BIT            NOT NULL CONSTRAINT DF_Users_IsActive  DEFAULT (1),
         CreatedAt    DATETIME2      NOT NULL CONSTRAINT DF_Users_CreatedAt DEFAULT (SYSUTCDATETIME()),
         CONSTRAINT UQ_Users_Username UNIQUE (Username)
+    );
+END
+GO
+
+-- ---- Employees -----------------------------------------------------------
+-- CRM employee records used by the CRIA module.
+-- Excel import: required columns Name, Department, Salary.
+IF OBJECT_ID('dbo.Employees', 'U') IS NULL
+BEGIN
+    CREATE TABLE dbo.Employees (
+        Id           INT IDENTITY(1,1) CONSTRAINT PK_Employees PRIMARY KEY,
+        Name         NVARCHAR(100) NOT NULL,
+        Department   NVARCHAR(100) NOT NULL,
+        Salary       INT           NOT NULL,
+        CreatedAt    DATETIME2     NOT NULL CONSTRAINT DF_Employees_CreatedAt DEFAULT (SYSUTCDATETIME())
     );
 END
 GO

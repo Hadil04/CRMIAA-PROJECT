@@ -9,68 +9,79 @@
 
 {% block content %}
 <div class="admin-layout">
+
     <header class="topbar">
-        <div class="topbar__brand">
+        <a class="topbar__brand" href="{{ url_for('admin.dashboard') }}" aria-label="CRMIAA home">
             <div class="topbar__logo" aria-hidden="true">C</div>
             <span class="topbar__name">CRMIAA</span>
-        </div>
+        </a>
         <div class="topbar__actions">
             <span class="topbar__user">
-                <span class="topbar__avatar" aria-hidden="true">
-                    {{ username[0] | upper }}
-                </span>
+                <span class="topbar__avatar" aria-hidden="true">{{ username[0] | upper }}</span>
                 {{ username }}
             </span>
-            <a class="btn btn--ghost" href="{{ url_for('auth.logout') }}">Sign out</a>
+            <a class="btn btn--ghost btn--sm" href="{{ url_for('auth.logout') }}">Sign out</a>
         </div>
     </header>
 
     <main class="admin-main">
-        <section class="hero">
+
+        <section class="hero" aria-label="Welcome banner">
             <p class="hero__eyebrow">Admin Console</p>
-            <h1 class="hero__title">Welcome to CRMIAA</h1>
+            <h1 class="hero__title">Welcome back,<br>{{ username }}</h1>
             <p class="hero__subtitle">
-                You are signed in as <strong>{{ username }}</strong>.
-                This is your starting point &mdash; add your modules below.
+                Your command center for users, reports, and AI-powered data tools.
             </p>
         </section>
 
-        <section class="cards" aria-label="Quick sections">
-            <article class="card">
-                <div class="card__icon">👤</div>
-                <h3 class="card__title">Users</h3>
-                <p class="card__text">Manage admin accounts and permissions.</p>
-                <div class="card__actions">
-                    <a class="btn btn--ghost" href="{{ url_for('admin.users_page') }}">Manage Users</a>
-                    <a class="btn btn--primary" href="{{ url_for('admin.export_users') }}">Export Users to Excel</a>
-                </div>
-            </article>
+        <section class="page-section" aria-labelledby="modules-heading">
+            <div class="page-section__header">
+                <h2 class="page-section__title" id="modules-heading">Modules</h2>
+                <p class="page-section__meta">4 available</p>
+            </div>
 
-            <article class="card">
-                <div class="card__icon">📊</div>
-                <h3 class="card__title">Reports</h3>
-                <p class="card__text">View activity and analytics at a glance.</p>
-                <div class="card__actions">
-                    <a class="btn btn--ghost" href="{{ url_for('admin.reports') }}">Open Reports</a>
-                </div>
-            </article>
-            <article class="card">
-                <div class="card__icon">🤖</div>
-                <h3 class="card__title">CRIA</h3>
-                <p class="card__text">Ask questions, filter data, and draw charts with AI-assisted masking.</p>
-                <div class="card__actions">
-                    <a class="btn btn--ghost" href="{{ url_for('cria.index') }}">Open CRIA</a>
-                </div>
-            </article>
-            <article class="card">
-                <div class="card__icon">⚙️</div>
-                <h3 class="card__title">Settings</h3>
-                <p class="card__text">Configure the application to your needs.</p>
-                <div class="card__actions">
-                    <span class="card__badge">Coming soon</span>
-                </div>
-            </article>
+            <div class="cards">
+
+                <article class="card card--users">
+                    <div class="card__icon" aria-hidden="true">👤</div>
+                    <h3 class="card__title">Users</h3>
+                    <p class="card__text">Manage accounts, roles, and permissions across the system.</p>
+                    <div class="card__actions">
+                        <a class="btn btn--ghost" href="{{ url_for('admin.users_page') }}">Manage</a>
+                        <a class="btn btn--primary" href="{{ url_for('admin.export_users') }}">Export</a>
+                    </div>
+                </article>
+
+                <article class="card card--reports">
+                    <div class="card__icon" aria-hidden="true">📊</div>
+                    <h3 class="card__title">Reports</h3>
+                    <p class="card__text">Import user records and view activity at a glance.</p>
+                    <div class="card__actions">
+                        <a class="btn btn--primary" href="{{ url_for('admin.reports') }}">Open Reports</a>
+                    </div>
+                </article>
+
+                <article class="card card--cria">
+                    <div class="card__icon" aria-hidden="true">🤖</div>
+                    <h3 class="card__title">CRIA</h3>
+                    <p class="card__text">Ask questions, filter data, and draw charts with AI-assisted masking.</p>
+                    <div class="card__actions">
+                        <a class="btn btn--primary" href="{{ url_for('cria.index') }}">Open CRIA</a>
+                    </div>
+                </article>
+
+                <article class="card card--settings">
+                    <div class="card__icon" aria-hidden="true">⚙️</div>
+                    <h3 class="card__title">Settings</h3>
+                    <p class="card__text">Configure the database connection and application settings.</p>
+                    <div class="card__actions">
+                        <a class="btn btn--primary" href="{{ url_for('admin.settings') }}">Open Settings</a>
+                    </div>
+                </article>
+
+            </div>
         </section>
+
     </main>
 </div>
 {% endblock %}

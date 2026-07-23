@@ -9,24 +9,24 @@
 
 {% block content %}
 <div class="admin-layout">
+
     <header class="topbar">
-        <div class="topbar__brand">
+        <a class="topbar__brand" href="{{ url_for('user.dashboard') }}" aria-label="CRMIAA home">
             <div class="topbar__logo" aria-hidden="true">C</div>
             <span class="topbar__name">CRMIAA</span>
-        </div>
+        </a>
         <div class="topbar__actions">
             <span class="topbar__user">
-                <span class="topbar__avatar" aria-hidden="true">
-                    {{ username[0] | upper }}
-                </span>
+                <span class="topbar__avatar" aria-hidden="true">{{ username[0] | upper }}</span>
                 {{ username }}
             </span>
-            <a class="btn btn--ghost" href="{{ url_for('auth.logout') }}">Sign out</a>
+            <a class="btn btn--ghost btn--sm" href="{{ url_for('auth.logout') }}">Sign out</a>
         </div>
     </header>
 
     <main class="admin-main">
-        <section class="hero">
+
+        <section class="hero" aria-label="Welcome banner">
             <p class="hero__eyebrow">User Console</p>
             <h1 class="hero__title">Welcome to CRMIAA</h1>
             <p class="hero__subtitle">
@@ -34,26 +34,35 @@
             </p>
         </section>
 
-        <section class="cards" aria-label="Quick sections">
-            <article class="card">
-                <div class="card__icon">👤</div>
-                <h3 class="card__title">My Profile</h3>
-                <p class="card__text">View your personal information.</p>
-                <div class="card__actions">
-                    <span class="card__badge">Coming soon</span>
-                </div>
-            </article>
+        <section class="page-section" aria-labelledby="workspace-heading">
+            <div class="page-section__header">
+                <h2 class="page-section__title" id="workspace-heading">Your workspace</h2>
+                <p class="page-section__meta">Tools and pages available to your account.</p>
+            </div>
 
-            <article class="card">
-                <div class="card__icon">🏠</div>
-                <h3 class="card__title">CRM</h3>
-                <p class="card__text">Access CRM pages for regular users.</p>
-                <div class="card__actions">
-                    <span class="card__badge">Coming soon</span>
-                </div>
-            </article>
+            <div class="cards">
+
+                <article class="card">
+                    <div class="card__icon" aria-hidden="true">👤</div>
+                    <h3 class="card__title">My Profile</h3>
+                    <p class="card__text">View your personal information.</p>
+                    <div class="card__actions">
+                        <span class="card__badge">Coming soon</span>
+                    </div>
+                </article>
+
+                <article class="card">
+                    <div class="card__icon" aria-hidden="true">🏠</div>
+                    <h3 class="card__title">CRM</h3>
+                    <p class="card__text">Access CRM pages for regular users.</p>
+                    <div class="card__actions">
+                        <span class="card__badge">Coming soon</span>
+                    </div>
+                </article>
+
+            </div>
         </section>
+
     </main>
 </div>
 {% endblock %}
-

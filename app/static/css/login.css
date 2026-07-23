@@ -1,136 +1,192 @@
 /* ==========================================================================
-   CRMIAA — Login page
+   CRMIAA — Login pages (user sign-in, sign-up, admin sign-in)
    ========================================================================== */
 
+/* ---- Shell (full-viewport gradient backdrop) ---------------------------- */
 .auth-shell {
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 32px 24px;
+    padding: var(--space-xl) var(--space-lg);
     background: var(--brand-gradient);
     position: relative;
     overflow: hidden;
 }
 
-/* Soft decorative glows in the background. */
+/*
+ * Two large decorative rings — top-right and bottom-left.
+ * Both use existing brand token colours only (no new hex values).
+ */
 .auth-shell::before,
 .auth-shell::after {
     content: "";
     position: absolute;
     border-radius: 50%;
-    filter: blur(10px);
-    opacity: 0.35;
     pointer-events: none;
 }
 
+/* Top-right: large hollow ring */
 .auth-shell::before {
-    width: 420px;
-    height: 420px;
-    background: #a78bfa;
-    top: -120px;
-    right: -80px;
+    width: 560px;
+    height: 560px;
+    border: 80px solid rgba(255, 255, 255, 0.06);
+    top: -200px;
+    right: -180px;
 }
 
+/* Bottom-left: filled soft glow */
 .auth-shell::after {
-    width: 360px;
-    height: 360px;
-    background: #38bdf8;
-    bottom: -140px;
-    left: -100px;
+    width: 440px;
+    height: 440px;
+    background: radial-gradient(circle, rgba(124, 58, 237, 0.5) 0%, transparent 70%);
+    bottom: -200px;
+    left: -160px;
+    filter: blur(40px);
 }
 
+/* ---- Card --------------------------------------------------------------- */
 .auth-card {
     position: relative;
     z-index: 1;
     width: 100%;
-    max-width: 420px;
+    max-width: 460px;
     background: var(--surface);
+    border: 1px solid rgba(203, 213, 225, 0.6);   /* --ink-300 at 60% */
     border-radius: var(--radius);
-    box-shadow: var(--shadow-lg);
-    padding: 44px 40px 32px;
+    box-shadow:
+        0 0 0 1px rgba(99, 102, 241, 0.06),        /* subtle brand ring */
+        0 32px 72px -16px rgba(15, 23, 42, 0.38),  /* deep lift shadow */
+        0 8px 24px -8px rgba(79, 70, 229, 0.14);   /* brand-tinted mid shadow */
+    padding: 0;                                     /* padding handled per zone */
+    animation: auth-card-in 0.42s cubic-bezier(0.22, 0.61, 0.36, 1) both;
+    overflow: hidden;
 }
 
+@keyframes auth-card-in {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* ---- Card zones --------------------------------------------------------- */
+
+/* Top zone: brand header */
 .auth-brand {
     display: flex;
     align-items: center;
     gap: 14px;
-    margin-bottom: 32px;
-    padding-bottom: 24px;
+    padding: 32px 36px 24px;
     border-bottom: 1px solid var(--ink-100);
+    background: var(--page-bg);
 }
 
+/* Middle zone: heading + form */
+.auth-body {
+    padding: 32px 36px 28px;
+}
+
+/* Bottom zone: footer links */
+.auth-foot {
+    padding: 20px 36px;
+    border-top: 1px solid var(--ink-100);
+    background: var(--page-bg);
+    text-align: center;
+    font-size: 0.875rem;
+    color: var(--ink-500);
+    line-height: 1.7;
+    margin: 0;                                      /* override any inherited margin */
+}
+
+/* ---- Brand header ------------------------------------------------------- */
 .auth-logo {
-    width: 50px;
-    height: 50px;
+    width: 48px;
+    height: 48px;
     border-radius: 12px;
     background: var(--brand-gradient);
     color: var(--surface);
     font-weight: 800;
-    font-size: 1.4rem;
+    font-size: 1.25rem;
     display: grid;
     place-items: center;
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
     flex-shrink: 0;
+    letter-spacing: 0;
 }
 
 .auth-brand__name {
     margin: 0;
-    font-size: 1.35rem;
+    font-size: 1.3rem;
     font-weight: 800;
-    letter-spacing: 0.4px;
+    letter-spacing: -0.01em;
     line-height: 1.2;
+    color: var(--ink-900);
 }
 
 .auth-brand__tag {
     margin: 4px 0 0;
-    font-size: 0.78rem;
+    font-size: 0.7rem;
     color: var(--ink-500);
     text-transform: uppercase;
-    letter-spacing: 1.2px;
-    font-weight: 600;
+    letter-spacing: 1.6px;
+    font-weight: 700;
+}
+
+/* ---- Page heading ------------------------------------------------------- */
+.auth-intro {
+    margin-bottom: 24px;
 }
 
 .auth-heading {
     margin: 0 0 6px;
     font-size: 1.55rem;
     font-weight: 800;
-    line-height: 1.25;
+    line-height: 1.15;
     color: var(--ink-900);
+    letter-spacing: -0.025em;
 }
 
 .auth-subheading {
-    margin: 0 0 28px;
+    margin: 0;
     color: var(--ink-500);
-    font-size: 0.96rem;
-    line-height: 1.55;
+    font-size: 0.9rem;
+    line-height: 1.65;
 }
 
+/* ---- Form --------------------------------------------------------------- */
 .auth-form {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 18px;
 }
 
+/* Field wrapper (used as <label>) */
 .field {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 
 .field__label {
-    font-size: 0.86rem;
-    font-weight: 600;
+    font-size: 0.8rem;
+    font-weight: 700;
     color: var(--ink-700);
-    letter-spacing: 0.01em;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
 }
 
 .field__input {
     width: 100%;
-    padding: 12px 14px;
-    border: 1px solid var(--ink-300);
+    padding: 13px 15px;
+    border: 1.5px solid var(--ink-300);
     border-radius: var(--radius-sm);
-    font-size: 0.98rem;
+    font-family: var(--font);
+    font-size: 0.9375rem;
     color: var(--ink-900);
     background: var(--surface);
     transition:
@@ -141,26 +197,31 @@
 
 .field__input::placeholder {
     color: var(--ink-500);
-    opacity: 0.75;
+    opacity: 0.6;
 }
 
 .field__input:hover {
     border-color: var(--brand-400);
+    background: var(--page-bg);
 }
 
 .field__input:focus {
     outline: none;
     border-color: var(--brand-500);
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+    background: var(--surface);
+    box-shadow:
+        0 0 0 3px rgba(99, 102, 241, 0.16),
+        0 1px 4px rgba(99, 102, 241, 0.08);
 }
 
+/* ---- Password toggle ---------------------------------------------------- */
 .field__password {
     position: relative;
     display: block;
 }
 
 .field__password .field__input {
-    padding-right: 68px;
+    padding-right: 74px;
 }
 
 .field__toggle {
@@ -171,16 +232,19 @@
     background: none;
     border: none;
     color: var(--brand-600);
-    font-size: 0.82rem;
-    font-weight: 600;
+    font-family: var(--font);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
     cursor: pointer;
     padding: 6px 10px;
     border-radius: 6px;
-    transition: background 0.15s ease;
+    transition: background 0.14s ease, color 0.14s ease;
 }
 
 .field__toggle:hover {
     background: var(--ink-100);
+    color: var(--brand-500);
 }
 
 .field__toggle:focus-visible {
@@ -188,53 +252,67 @@
     box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.22);
 }
 
+/* ---- Submit button ------------------------------------------------------ */
 .auth-submit {
-    margin-top: 4px;
+    margin-top: 8px;
     width: 100%;
-    padding: 14px 18px;
+    padding: 15px 18px;
     border: none;
     border-radius: var(--radius-sm);
     background: var(--brand-gradient);
     color: var(--surface);
-    font-size: 1rem;
+    font-family: var(--font);
+    font-size: 0.9375rem;
     font-weight: 700;
+    letter-spacing: 0.03em;
     cursor: pointer;
-    box-shadow: var(--shadow-md);
+    box-shadow:
+        0 4px 16px rgba(79, 70, 229, 0.35),
+        0 1px 4px rgba(15, 23, 42, 0.08);
     transition:
         opacity 0.18s ease,
         transform 0.08s ease,
         box-shadow 0.18s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Shimmer overlay on hover */
+.auth-submit::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: rgba(255, 255, 255, 0);
+    transition: background 0.18s ease;
 }
 
 .auth-submit:hover {
-    opacity: 0.94;
-    box-shadow: var(--shadow-lg);
+    box-shadow:
+        0 8px 28px rgba(79, 70, 229, 0.42),
+        0 2px 8px rgba(15, 23, 42, 0.1);
+}
+
+.auth-submit:hover::after {
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .auth-submit:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.28);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.36);
 }
 
 .auth-submit:active {
     transform: translateY(1px);
+    opacity: 0.96;
 }
 
-.auth-foot {
-    margin: 28px 0 0;
-    padding-top: 22px;
-    border-top: 1px solid var(--ink-100);
-    text-align: center;
-    font-size: 0.88rem;
-    color: var(--ink-500);
-    line-height: 1.6;
-}
-
+/* ---- Footer links ------------------------------------------------------- */
 .auth-foot a {
     color: var(--brand-600);
     font-weight: 700;
     text-decoration: none;
-    transition: color 0.15s ease;
+    text-underline-offset: 3px;
+    transition: color 0.14s ease;
 }
 
 .auth-foot a:hover {
@@ -242,21 +320,48 @@
     text-decoration: underline;
 }
 
+/* Multiple footer links (sign-in page) */
 .auth-links {
-    display: grid;
-    gap: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .auth-links p {
     margin: 0;
 }
 
-@media (max-width: 480px) {
+/* ---- Responsive --------------------------------------------------------- */
+@media (max-width: 520px) {
+    .auth-shell {
+        padding: var(--space-md) var(--space-md);
+        align-items: flex-start;
+        padding-top: 32px;
+    }
+
     .auth-card {
-        padding: 36px 24px 28px;
+        border-radius: 12px;
+    }
+
+    .auth-brand {
+        padding: 24px 22px 20px;
+    }
+
+    .auth-body {
+        padding: 24px 22px 22px;
+    }
+
+    .auth-foot {
+        padding: 16px 22px;
     }
 
     .auth-heading {
         font-size: 1.35rem;
+    }
+
+    .auth-logo {
+        width: 42px;
+        height: 42px;
+        font-size: 1.1rem;
     }
 }

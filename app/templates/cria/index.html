@@ -9,25 +9,25 @@
 
 {% block content %}
 <div class="admin-layout">
+
     <header class="topbar">
-        <div class="topbar__brand">
+        <a class="topbar__brand" href="{{ url_for('admin.dashboard') }}" aria-label="CRMIAA home">
             <div class="topbar__logo" aria-hidden="true">C</div>
             <span class="topbar__name">CRMIAA</span>
-        </div>
+        </a>
         <div class="topbar__actions">
             <span class="topbar__user">
-                <span class="topbar__avatar" aria-hidden="true">
-                    {{ username[0] | upper }}
-                </span>
+                <span class="topbar__avatar" aria-hidden="true">{{ username[0] | upper }}</span>
                 {{ username }}
             </span>
-            <a class="btn btn--ghost" href="{{ url_for('admin.dashboard') }}">Dashboard</a>
-            <a class="btn btn--ghost" href="{{ url_for('auth.logout') }}">Sign out</a>
+            <a class="btn btn--ghost btn--sm" href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+            <a class="btn btn--ghost btn--sm" href="{{ url_for('auth.logout') }}">Sign out</a>
         </div>
     </header>
 
     <main class="admin-main">
-        <section class="hero">
+
+        <section class="hero" aria-label="Page header">
             <p class="hero__eyebrow">Admin Console</p>
             <h1 class="hero__title">CRIA</h1>
             <p class="hero__subtitle">
@@ -47,23 +47,30 @@
         </section>
 
         <div class="cria-tabs" role="tablist" aria-label="CRIA actions">
-            <button type="button" class="cria-tab{% if active_tab == 'ask' %} is-active{% endif %}"
-                    data-tab="ask" role="tab" aria-selected="{{ 'true' if active_tab == 'ask' else 'false' }}">
+            <button type="button"
+                    class="cria-tab{% if active_tab == 'ask' %} is-active{% endif %}"
+                    data-tab="ask" role="tab"
+                    aria-selected="{{ 'true' if active_tab == 'ask' else 'false' }}">
                 Ask a question
             </button>
-            <button type="button" class="cria-tab{% if active_tab == 'filter' %} is-active{% endif %}"
-                    data-tab="filter" role="tab" aria-selected="{{ 'true' if active_tab == 'filter' else 'false' }}">
+            <button type="button"
+                    class="cria-tab{% if active_tab == 'filter' %} is-active{% endif %}"
+                    data-tab="filter" role="tab"
+                    aria-selected="{{ 'true' if active_tab == 'filter' else 'false' }}">
                 Filter data
             </button>
-            <button type="button" class="cria-tab{% if active_tab == 'graph' %} is-active{% endif %}"
-                    data-tab="graph" role="tab" aria-selected="{{ 'true' if active_tab == 'graph' else 'false' }}">
+            <button type="button"
+                    class="cria-tab{% if active_tab == 'graph' %} is-active{% endif %}"
+                    data-tab="graph" role="tab"
+                    aria-selected="{{ 'true' if active_tab == 'graph' else 'false' }}">
                 Draw a graph
             </button>
         </div>
 
+        {# ---- Ask panel -------------------------------------------------- #}
         <section id="panel-ask"
                  class="cria-panel{% if active_tab == 'ask' %} is-active{% endif %}"
-                 role="tabpanel">
+                 role="tabpanel" aria-labelledby="tab-ask">
             <form class="cria-form" method="POST" action="{{ url_for('cria.ask') }}">
                 <h2 class="cria-form__title">Ask a question about the data</h2>
                 <p class="cria-form__meta">Your question is masked before being sent to the AI.</p>
@@ -85,9 +92,10 @@
             </form>
         </section>
 
+        {# ---- Filter panel ----------------------------------------------- #}
         <section id="panel-filter"
                  class="cria-panel{% if active_tab == 'filter' %} is-active{% endif %}"
-                 role="tabpanel">
+                 role="tabpanel" aria-labelledby="tab-filter">
             <form class="cria-form" method="POST" action="{{ url_for('cria.filter_rows') }}">
                 <h2 class="cria-form__title">Filter the data</h2>
                 <p class="cria-form__meta">Use plain English, e.g. <code>salary above 50000</code>.</p>
@@ -105,24 +113,26 @@
                 <div class="cria-result">
                     <p class="cria-result__title">Filtered rows</p>
                     {% if filter_rows %}
-                    <table class="cria-table">
-                        <thead>
-                            <tr>
-                                {% for column in filter_columns %}
-                                <th>{{ column }}</th>
+                    <div class="cria-result__table">
+                        <table class="cria-table">
+                            <thead>
+                                <tr>
+                                    {% for column in filter_columns %}
+                                    <th>{{ column }}</th>
+                                    {% endfor %}
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in filter_rows %}
+                                <tr>
+                                    {% for column in filter_columns %}
+                                    <td>{{ row[column] }}</td>
+                                    {% endfor %}
+                                </tr>
                                 {% endfor %}
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for row in filter_rows %}
-                            <tr>
-                                {% for column in filter_columns %}
-                                <td>{{ row[column] }}</td>
-                                {% endfor %}
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
+                            </tbody>
+                        </table>
+                    </div>
                     {% else %}
                     <p>No matching rows.</p>
                     {% endif %}
@@ -131,9 +141,10 @@
             </form>
         </section>
 
+        {# ---- Graph panel ------------------------------------------------- #}
         <section id="panel-graph"
                  class="cria-panel{% if active_tab == 'graph' %} is-active{% endif %}"
-                 role="tabpanel">
+                 role="tabpanel" aria-labelledby="tab-graph">
             <form class="cria-form" method="POST" action="{{ url_for('cria.graph') }}">
                 <h2 class="cria-form__title">Draw a graph</h2>
                 <p class="cria-form__meta">
@@ -202,6 +213,7 @@
                 {% endif %}
             </form>
         </section>
+
     </main>
 </div>
 {% endblock %}

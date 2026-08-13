@@ -1,68 +1,92 @@
-{% extends "base.html" %}
+{% extends "user/layout.html" %}
+{% set active_page = "dashboard" %}
 
-{% block title %}User Dashboard · CRMIAA{% endblock %}
-{% block body_class %}user-page{% endblock %}
+{% block title %}Dashboard · CRMIAA{% endblock %}
 
-{% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
-{% endblock %}
+{% block page_content %}
 
-{% block content %}
-<div class="admin-layout">
-
-    <header class="topbar">
-        <a class="topbar__brand" href="{{ url_for('user.dashboard') }}" aria-label="CRMIAA home">
-            <div class="topbar__logo" aria-hidden="true">C</div>
-            <span class="topbar__name">CRMIAA</span>
-        </a>
-        <div class="topbar__actions">
-            <span class="topbar__user">
-                <span class="topbar__avatar" aria-hidden="true">{{ username[0] | upper }}</span>
-                {{ username }}
-            </span>
-            <a class="btn btn--ghost btn--sm" href="{{ url_for('auth.logout') }}">Sign out</a>
-        </div>
-    </header>
-
-    <main class="admin-main">
-
-        <section class="hero" aria-label="Welcome banner">
-            <p class="hero__eyebrow">User Console</p>
-            <h1 class="hero__title">Welcome to CRMIAA</h1>
-            <p class="hero__subtitle">
-                You are signed in as <strong>{{ username }}</strong>.
-            </p>
-        </section>
-
-        <section class="page-section" aria-labelledby="workspace-heading">
-            <div class="page-section__header">
-                <h2 class="page-section__title" id="workspace-heading">Your workspace</h2>
-                <p class="page-section__meta">Tools and pages available to your account.</p>
-            </div>
-
-            <div class="cards">
-
-                <article class="card">
-                    <div class="card__icon" aria-hidden="true">👤</div>
-                    <h3 class="card__title">My Profile</h3>
-                    <p class="card__text">View your personal information.</p>
-                    <div class="card__actions">
-                        <span class="card__badge">Coming soon</span>
-                    </div>
-                </article>
-
-                <article class="card">
-                    <div class="card__icon" aria-hidden="true">🏠</div>
-                    <h3 class="card__title">CRM</h3>
-                    <p class="card__text">Access CRM pages for regular users.</p>
-                    <div class="card__actions">
-                        <span class="card__badge">Coming soon</span>
-                    </div>
-                </article>
-
-            </div>
-        </section>
-
-    </main>
+<div class="page-header">
+    <div class="page-header__left">
+        <h1 class="page-title">Welcome back, {{ username }}</h1>
+        <p class="page-subtitle">Here's your CRMIAA workspace.</p>
+    </div>
 </div>
+
+{# ---- Module cards ------------------------------------------------------- #}
+<div class="section-header" style="margin-top: 0;">
+    <h2 class="section-title">Your workspace</h2>
+    <p class="section-meta">Tools available to your account</p>
+</div>
+
+<div class="module-grid">
+
+    <div class="module-card">
+        <div class="module-card__icon module-card__icon--indigo" aria-hidden="true">&#128100;</div>
+        <h3 class="module-card__title">My Profile</h3>
+        <p class="module-card__text">View and update your personal account information.</p>
+        <div class="module-card__actions">
+            <span class="badge--soon">Coming soon</span>
+        </div>
+    </div>
+
+    <div class="module-card">
+        <div class="module-card__icon module-card__icon--blue" aria-hidden="true">&#127968;</div>
+        <h3 class="module-card__title">CRM</h3>
+        <p class="module-card__text">Access CRM data and contacts available to your role.</p>
+        <div class="module-card__actions">
+            <span class="badge--soon">Coming soon</span>
+        </div>
+    </div>
+
+    <div class="module-card">
+        <div class="module-card__icon module-card__icon--green" aria-hidden="true">&#128202;</div>
+        <h3 class="module-card__title">My Reports</h3>
+        <p class="module-card__text">View reports and analytics shared with your account.</p>
+        <div class="module-card__actions">
+            <span class="badge--soon">Coming soon</span>
+        </div>
+    </div>
+
+    <div class="module-card">
+        <div class="module-card__icon module-card__icon--gray" aria-hidden="true">&#128276;</div>
+        <h3 class="module-card__title">Notifications</h3>
+        <p class="module-card__text">Stay up to date with alerts and activity related to your account.</p>
+        <div class="module-card__actions">
+            <span class="badge--soon">Coming soon</span>
+        </div>
+    </div>
+
+</div>
+
+{# ---- Role info card ----------------------------------------------------- #}
+<div class="section-header" style="margin-top: var(--sp-8);">
+    <h2 class="section-title">Account details</h2>
+</div>
+
+<div class="section-block" style="margin-top: 0;">
+    <div class="section-block__head">
+        <h3 class="section-block__title">Signed in as</h3>
+    </div>
+    <div style="padding: var(--sp-5) var(--sp-5); display: flex; align-items: center; gap: var(--sp-4);">
+        <div class="topbar__avatar"
+             style="width: 48px; height: 48px; font-size: 1.1rem; flex-shrink: 0;"
+             aria-hidden="true">
+            {{ username[0] | upper }}
+        </div>
+        <div>
+            <div style="font-weight: 700; color: var(--gray-900); font-size: 1rem;">
+                {{ username }}
+            </div>
+            <div style="margin-top: 4px;">
+                <span class="pill pill--indigo">User</span>
+            </div>
+        </div>
+        <div style="margin-left: auto;">
+            <a class="btn btn--ghost btn--sm" href="{{ url_for('auth.logout') }}">
+                Sign out
+            </a>
+        </div>
+    </div>
+</div>
+
 {% endblock %}

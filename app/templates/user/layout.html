@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CRMIAA{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    {% block extra_styles %}{% endblock %}
+</head>
+<body>
+
+{# ---- Flash messages ---------------------------------------------------- #}
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-stack" role="status" aria-live="polite">
+        {% for category, message in messages %}
+        <div class="flash flash--{{ category }}">
+            <span>{{ message }}</span>
+            <button type="button" class="flash__close"
+                    aria-label="Dismiss"
+                    onclick="this.parentElement.remove()">&times;</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+{% endwith %}
+
+<div class="app-shell">
+
+    {# ---- User sidebar — no admin-only links ----------------------------- #}
+    <nav class="sidebar" aria-label="Main navigation">
+
+        <a class="sidebar__brand" href="{{ url_for('user.dashboard') }}">
+            <div class="sidebar__logo-mark" aria-hidden="true">C</div>
+            <div class="sidebar__brand-text">
+                <div class="sidebar__app-name">CRMIAA</div>
+                <div class="sidebar__app-tag">User Portal</div>
+            </div>
+        </a>
+
+        <div class="sidebar__nav">
+            <a class="nav-link {% if active_page == 'dashboard' %}is-active{% endif %}"
+               href="{{ url_for('user.dashboard') }}">
+                <span class="nav-link__icon" aria-hidden="true">&#9783;</span>
+                Dashboard
+            </a>
+            {#
+               Additional user-facing pages go here as they are built.
+               Only link to routes that exist and are accessible to the User role.
+            #}
+        </div>
+
+        <div class="sidebar__footer">
+            <a class="sidebar__sign-out" href="{{ url_for('auth.logout') }}">
+                <span aria-hidden="true">&#8594;</span>
+                Sign out
+            </a>
+        </div>
+
+    </nav>
+
+    {# ---- Content area --------------------------------------------------- #}
+    <div class="app-content">
+
+        <header class="topbar">
+            <div class="topbar__search">
+                <span class="topbar__search-icon" aria-hidden="true">&#128269;</span>
+                <input type="search" placeholder="Search…" aria-label="Search">
+            </div>
+            <div class="topbar__actions">
+                <button class="topbar__icon-btn" aria-label="Notifications" title="Notifications">
+                    &#128276;
+                </button>
+                <div class="topbar__user">
+                    <span class="topbar__avatar" aria-hidden="true">{{ username[0] | upper }}</span>
+                    <span>{{ username }}</span>
+                </div>
+            </div>
+        </header>
+
+        <main class="page-body">
+            {% block page_content %}{% endblock %}
+        </main>
+
+    </div>
+
+</div>
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

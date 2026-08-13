@@ -1,0 +1,104 @@
+/* ==========================================================================
+   CRMIAA — Design tokens
+   Single source of truth for every colour, size and shadow used in the app.
+   Import this file first; everything else references these variables only.
+   ========================================================================== */
+
+:root {
+    /* ------------------------------------------------------------------
+       Brand — indigo / purple
+    ------------------------------------------------------------------ */
+    --primary:        #4F46E5;   /* main CTA, active nav, primary buttons   */
+    --primary-hover:  #4338CA;   /* button hover                            */
+    --primary-light:  #EEF2FF;   /* active nav bg, hover row tints          */
+    --primary-mid:    #C7D2FE;   /* light accent borders, tag bg            */
+    --primary-dark:   #3730A3;   /* pressed state, deep accents             */
+
+    /* Gradient used on logo mark and submit buttons */
+    --brand-gradient: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+
+    /* ------------------------------------------------------------------
+       Neutrals — slate scale
+    ------------------------------------------------------------------ */
+    --gray-900: #0F172A;   /* headings, strong text                         */
+    --gray-800: #1E293B;   /* sidebar bg                                    */
+    --gray-700: #334155;   /* body text                                     */
+    --gray-600: #475569;   /* secondary text                                */
+    --gray-500: #64748B;   /* muted / placeholder                           */
+    --gray-400: #94A3B8;   /* disabled, faint labels                        */
+    --gray-300: #CBD5E1;   /* subtle borders                                */
+    --gray-200: #E2E8F0;   /* dividers, table borders                       */
+    --gray-100: #F1F5F9;   /* hover backgrounds, zebra rows                 */
+    --gray-50:  #F8FAFC;   /* page background                               */
+    --white:    #FFFFFF;   /* cards, topbar, sidebar header                 */
+
+    /* ------------------------------------------------------------------
+       Semantic / feedback
+    ------------------------------------------------------------------ */
+    --green:       #16A34A;
+    --green-bg:    #DCFCE7;
+    --green-mid:   #BBF7D0;
+    --amber:       #D97706;
+    --amber-bg:    #FEF3C7;
+    --red:         #DC2626;
+    --red-bg:      #FEE2E2;
+    --blue:        #2563EB;
+    --blue-bg:     #DBEAFE;
+    --blue-mid:    #BFDBFE;
+
+    /* ------------------------------------------------------------------
+       Surfaces
+    ------------------------------------------------------------------ */
+    --surface:    var(--white);
+    --page-bg:    var(--gray-50);
+    --sidebar-bg: var(--gray-800);
+
+    /* ------------------------------------------------------------------
+       Sidebar dimensions (fixed — referenced in layout.css + JS)
+    ------------------------------------------------------------------ */
+    --sidebar-w:  220px;
+    --topbar-h:   60px;
+
+    /* ------------------------------------------------------------------
+       Shape
+    ------------------------------------------------------------------ */
+    --radius-xs:  4px;
+    --radius-sm:  8px;
+    --radius:     12px;
+    --radius-lg:  16px;
+    --radius-xl:  20px;
+    --radius-full: 9999px;
+
+    /* ------------------------------------------------------------------
+       Shadows
+    ------------------------------------------------------------------ */
+    --shadow-xs:  0 1px 2px rgba(15, 23, 42, 0.05);
+    --shadow-sm:  0 1px 4px rgba(15, 23, 42, 0.08);
+    --shadow-md:  0 4px 16px rgba(15, 23, 42, 0.10);
+    --shadow-lg:  0 12px 40px rgba(15, 23, 42, 0.14);
+    --shadow-xl:  0 24px 60px rgba(15, 23, 42, 0.18);
+
+    /* ------------------------------------------------------------------
+       Typography
+    ------------------------------------------------------------------ */
+    --font: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+
+    /* ------------------------------------------------------------------
+       Spacing scale (8-pt grid)
+    ------------------------------------------------------------------ */
+    --sp-1:   4px;
+    --sp-2:   8px;
+    --sp-3:   12px;
+    --sp-4:   16px;
+    --sp-5:   20px;
+    --sp-6:   24px;
+    --sp-8:   32px;
+    --sp-10:  40px;
+    --sp-12:  48px;
+    --sp-16:  64px;
+
+    /* ------------------------------------------------------------------
+       Content max-width (for the scrollable main area)
+    ------------------------------------------------------------------ */
+    --content-max: 1100px;
+}

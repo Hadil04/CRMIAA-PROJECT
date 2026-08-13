@@ -14,6 +14,11 @@ Commands:
     python manage.py init-employees-table
         Create the `Employees` table (CRIA data source) if it doesn't exist.
 
+    python manage.py add-employee-id-column
+        Add the nullable EmployeeId FK column to dbo.Users (idempotent).
+        Run once after both init-db and init-employees-table.
+        Safe on a live DB — existing rows (Admin account etc.) keep NULL.
+
     python manage.py create-admin [username] [password] [role]
         Create OR update an admin account with a securely hashed password.
         Defaults: username=hadil, password=hadil123, role=Admin.
@@ -61,6 +66,23 @@ BEGIN
 END
 """
 
+# Adds the nullable FK column that links a Users row back to an Employees row.
+# Safe to run multiple times — checks sys.columns before altering.
+# Existing rows (Admin account etc.) keep EmployeeId = NULL and are untouched.
+_ADD_EMPLOYEE_ID_COLUMN = """
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID('dbo.Users')
+      AND name = 'EmployeeId'
+)
+BEGIN
+    ALTER TABLE dbo.Users
+        ADD EmployeeId INT NULL
+            CONSTRAINT FK_Users_Employees
+            FOREIGN KEY REFERENCES dbo.Employees(Id);
+END
+"""
+
 
 def cmd_test_db():
     with get_connection() as conn:
@@ -90,6 +112,18 @@ def cmd_init_employees_table():
         conn.cursor().execute(_CREATE_EMPLOYEES_TABLE)
         conn.commit()
     print("Employees table is ready.")
+
+
+def cmd_add_employee_id_column():
+    """Add the nullable EmployeeId FK column to dbo.Users (idempotent).
+
+    Safe to run on a live database — existing rows keep EmployeeId = NULL.
+    Run AFTER both init-db and init-employees-table.
+    """
+    with get_connection() as conn:
+        conn.cursor().execute(_ADD_EMPLOYEE_ID_COLUMN)
+        conn.commit()
+    print("EmployeeId column is ready on dbo.Users.")
 
 
 def cmd_create_admin(username="hadil", password="hadil123", role="Admin"):
@@ -153,12 +187,13 @@ def cmd_list_employees():
 
 
 COMMANDS = {
-    "test-db":               cmd_test_db,
-    "init-db":               cmd_init_db,
-    "init-employees-table":  cmd_init_employees_table,
-    "create-admin":          cmd_create_admin,
-    "list-users":            cmd_list_users,
-    "list-employees":        cmd_list_employees,
+    "test-db":                 cmd_test_db,
+    "init-db":                 cmd_init_db,
+    "init-employees-table":    cmd_init_employees_table,
+    "add-employee-id-column":  cmd_add_employee_id_column,
+    "create-admin":            cmd_create_admin,
+    "list-users":              cmd_list_users,
+    "list-employees":          cmd_list_employees,
 }
 
 

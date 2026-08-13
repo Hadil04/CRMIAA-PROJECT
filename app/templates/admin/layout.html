@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}CRMIAA{% endblock %}</title>
+
+    {# Token layer first, then shared base, then layout shell, then page CSS #}
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/variables.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/base.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/layout.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+    {% block extra_styles %}{% endblock %}
+</head>
+<body>
+
+{# ---- Flash messages ---------------------------------------------------- #}
+{% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-stack" role="status" aria-live="polite">
+        {% for category, message in messages %}
+        <div class="flash flash--{{ category }}">
+            <span>{{ message }}</span>
+            <button type="button" class="flash__close"
+                    aria-label="Dismiss"
+                    onclick="this.parentElement.remove()">&times;</button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+{% endwith %}
+
+{# ---- App shell ---------------------------------------------------------- #}
+<div class="app-shell">
+
+    {# ---- Sidebar -------------------------------------------------------- #}
+    <nav class="sidebar" aria-label="Main navigation">
+
+        <a class="sidebar__brand" href="{{ url_for('admin.dashboard') }}">
+            <div class="sidebar__logo-mark" aria-hidden="true">C</div>
+            <div class="sidebar__brand-text">
+                <div class="sidebar__app-name">CRMIAA</div>
+                <div class="sidebar__app-tag">AI Intelligence</div>
+            </div>
+        </a>
+
+        <div class="sidebar__nav">
+            <a class="nav-link {% if active_page == 'dashboard' %}is-active{% endif %}"
+               href="{{ url_for('admin.dashboard') }}">
+                <span class="nav-link__icon" aria-hidden="true">&#9783;</span>
+                Dashboard
+            </a>
+            <a class="nav-link {% if active_page == 'users' %}is-active{% endif %}"
+               href="{{ url_for('admin.users_page') }}">
+                <span class="nav-link__icon" aria-hidden="true">&#128101;</span>
+                Users
+            </a>
+            <a class="nav-link {% if active_page == 'employees' %}is-active{% endif %}"
+               href="{{ url_for('admin.employees_list') }}">
+                <span class="nav-link__icon" aria-hidden="true">&#128188;</span>
+                Employees
+            </a>
+            <a class="nav-link {% if active_page == 'cria' %}is-active{% endif %}"
+               href="{{ url_for('cria.index') }}">
+                <span class="nav-link__icon" aria-hidden="true">&#129302;</span>
+                AI Assistant
+            </a>
+            <a class="nav-link {% if active_page == 'reports' %}is-active{% endif %}"
+               href="{{ url_for('admin.reports') }}">
+                <span class="nav-link__icon" aria-hidden="true">&#128202;</span>
+                Reports
+            </a>
+            <a class="nav-link {% if active_page == 'settings' %}is-active{% endif %}"
+               href="{{ url_for('admin.settings') }}">
+                <span class="nav-link__icon" aria-hidden="true">&#9881;</span>
+                Settings
+            </a>
+        </div>
+
+        <div class="sidebar__footer">
+            <a class="sidebar__sign-out" href="{{ url_for('auth.logout') }}">
+                <span aria-hidden="true">&#8594;</span>
+                Sign out
+            </a>
+        </div>
+
+    </nav>
+
+    {# ---- Content area --------------------------------------------------- #}
+    <div class="app-content">
+
+        {# Topbar #}
+        <header class="topbar">
+            <div class="topbar__search">
+                <span class="topbar__search-icon" aria-hidden="true">&#128269;</span>
+                <input type="search" placeholder="Search insights, leads…" aria-label="Search">
+            </div>
+            <div class="topbar__actions">
+                <button class="topbar__icon-btn" aria-label="Notifications" title="Notifications">
+                    &#128276;
+                </button>
+                <a class="topbar__icon-btn" href="{{ url_for('admin.settings') }}"
+                   aria-label="Settings" title="Settings">&#9881;</a>
+                <div class="topbar__user">
+                    <span class="topbar__avatar" aria-hidden="true">{{ username[0] | upper }}</span>
+                    <span>{{ username }}</span>
+                </div>
+            </div>
+        </header>
+
+        {# Scrollable page body #}
+        <main class="page-body">
+            {% block page_content %}{% endblock %}
+        </main>
+
+    </div>{# /.app-content #}
+
+</div>{# /.app-shell #}
+
+{% block scripts %}{% endblock %}
+</body>
+</html>

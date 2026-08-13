@@ -45,3 +45,20 @@ BEGIN
     );
 END
 GO
+
+-- ---- Users.EmployeeId (nullable FK → Employees) -------------------------
+-- Links an auto-generated login account back to its source Employee row.
+-- Existing rows (e.g. the Admin account) keep EmployeeId = NULL — untouched.
+-- Run this block after both tables exist.
+IF NOT EXISTS (
+    SELECT 1 FROM sys.columns
+    WHERE object_id = OBJECT_ID('dbo.Users')
+      AND name = 'EmployeeId'
+)
+BEGIN
+    ALTER TABLE dbo.Users
+        ADD EmployeeId INT NULL
+            CONSTRAINT FK_Users_Employees
+            FOREIGN KEY REFERENCES dbo.Employees(Id);
+END
+GO

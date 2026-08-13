@@ -1,0 +1,92 @@
+{% extends "admin/layout.html" %}
+{% set active_page = "employees" %}
+
+{% block title %}{{ form_title }} · CRMIAA{% endblock %}
+
+{% block page_content %}
+
+<div class="page-header">
+    <div class="page-header__left">
+        <h1 class="page-title">{{ form_title }}</h1>
+        <p class="page-subtitle">
+            {% if employee and employee.id is defined %}
+                Update the details for this employee record.
+            {% else %}
+                Fill in the details to add a new employee to the database.
+            {% endif %}
+        </p>
+    </div>
+    <div class="page-header__actions">
+        <a class="btn btn--ghost" href="{{ url_for('admin.employees_list') }}">
+            &#8592;&nbsp;Back to list
+        </a>
+    </div>
+</div>
+
+<div class="section-block" style="max-width: 560px;">
+    <div class="section-block__head">
+        <h2 class="section-block__title">
+            {% if employee and employee.id is defined %}Edit record{% else %}New record{% endif %}
+        </h2>
+    </div>
+
+    {#
+       form action  — passed from the route (employee_create or employee_update)
+       name attrs   — "name", "department", "salary" — match request.form.get() exactly
+    #}
+    <form method="POST"
+          action="{{ action }}"
+          novalidate
+          style="padding: var(--sp-6);">
+
+        <div class="settings-field" style="margin-bottom: var(--sp-5);">
+            <label class="settings-label" for="emp_name">Name</label>
+            <input class="settings-input"
+                   id="emp_name"
+                   name="name"
+                   type="text"
+                   required
+                   maxlength="100"
+                   autocomplete="off"
+                   placeholder="e.g. Karim Mansour"
+                   value="{{ employee.name if employee else '' }}">
+        </div>
+
+        <div class="settings-field" style="margin-bottom: var(--sp-5);">
+            <label class="settings-label" for="emp_department">Department</label>
+            <input class="settings-input"
+                   id="emp_department"
+                   name="department"
+                   type="text"
+                   required
+                   maxlength="100"
+                   autocomplete="off"
+                   placeholder="e.g. Engineering"
+                   value="{{ employee.department if employee else '' }}">
+        </div>
+
+        <div class="settings-field" style="margin-bottom: var(--sp-6);">
+            <label class="settings-label" for="emp_salary">Salary</label>
+            <input class="settings-input"
+                   id="emp_salary"
+                   name="salary"
+                   type="number"
+                   required
+                   min="1"
+                   step="1"
+                   placeholder="e.g. 55000"
+                   value="{{ employee.salary if employee else '' }}">
+            <span class="settings-hint">Whole number only, greater than zero.</span>
+        </div>
+
+        <div class="settings-actions">
+            <button class="btn btn--primary" type="submit">
+                {% if employee and employee.id is defined %}Save changes{% else %}Create employee{% endif %}
+            </button>
+            <a class="btn btn--ghost" href="{{ url_for('admin.employees_list') }}">Cancel</a>
+        </div>
+
+    </form>
+</div>
+
+{% endblock %}

@@ -1,98 +1,202 @@
-{% extends "admin/dashboard.html" %}
+{% extends "admin/layout.html" %}
+{% set active_page = "users" %}
 
 {% block title %}Users · CRMIAA{% endblock %}
 
-{% block content %}
-<div class="admin-layout">
+{% block page_content %}
 
-    <header class="topbar">
-        <a class="topbar__brand" href="{{ url_for('admin.dashboard') }}" aria-label="CRMIAA home">
-            <div class="topbar__logo" aria-hidden="true">C</div>
-            <span class="topbar__name">CRMIAA</span>
-        </a>
-        <div class="topbar__actions">
-            <span class="topbar__user">
-                <span class="topbar__avatar" aria-hidden="true">{{ username[0] | upper }}</span>
-                {{ username }}
-            </span>
-            <a class="btn btn--ghost btn--sm" href="{{ url_for('admin.dashboard') }}">Dashboard</a>
-            <a class="btn btn--ghost btn--sm" href="{{ url_for('auth.logout') }}">Sign out</a>
-        </div>
-    </header>
-
-    <main class="admin-main">
-
-        <section class="hero" aria-label="Page header">
-            <p class="hero__eyebrow">Admin Console</p>
-            <h1 class="hero__title">Users Management</h1>
-            <p class="hero__subtitle">Promote / demote roles and disable users.</p>
-        </section>
-
-        <section class="page-section" aria-labelledby="users-heading">
-            <div class="page-section__header">
-                <h2 class="page-section__title" id="users-heading">All users</h2>
-                <p class="page-section__meta">
-                    {{ users|length }} account{{ "s" if users|length != 1 else "" }} in the system.
-                </p>
-            </div>
-
-            <div class="table-shell">
-                <table class="data-table">
-                    <thead>
-                        <tr>
-                            <th scope="col">ID</th>
-                            <th scope="col">Username</th>
-                            <th scope="col">Role</th>
-                            <th scope="col">Active</th>
-                            <th scope="col">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for u in users %}
-                        <tr>
-                            <td>{{ u.id }}</td>
-                            <td class="username-cell">{{ u.username }}</td>
-                            <td>
-                                {% if u.role == 'Admin' %}
-                                    <span class="role-pill role-pill--admin">{{ u.role }}</span>
-                                {% else %}
-                                    <span class="role-pill role-pill--user">{{ u.role }}</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if u.is_active %}
-                                    <span class="status-pill status-pill--ok">Yes</span>
-                                {% else %}
-                                    <span class="status-pill status-pill--muted">No</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                <div class="data-table__actions">
-                                    {% if u.role == 'Admin' %}
-                                        <form method="POST" action="{{ url_for('admin.toggle_user_role', user_id=u.id) }}">
-                                            <input type="hidden" name="action" value="demote" />
-                                            <button class="btn btn--ghost btn--sm" type="submit">Demote to User</button>
-                                        </form>
-                                    {% else %}
-                                        <form method="POST" action="{{ url_for('admin.toggle_user_role', user_id=u.id) }}">
-                                            <input type="hidden" name="action" value="promote" />
-                                            <button class="btn btn--primary btn--sm" type="submit">Promote to Admin</button>
-                                        </form>
-                                    {% endif %}
-
-                                    <form method="POST" action="{{ url_for('admin.disable_user', user_id=u.id) }}">
-                                        <button class="btn btn--danger btn--sm" type="submit">Disable</button>
-                                    </form>
-                                </div>
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-
-        </section>
-
-    </main>
+<div class="page-header">
+    <div class="page-header__left">
+        <h1 class="page-title">Users</h1>
+        <p class="page-subtitle">Manage accounts, roles, and permissions.</p>
+    </div>
+    <div class="page-header__actions">
+        <a class="btn btn--ghost" href="{{ url_for('admin.export_users') }}">&#8595;&nbsp;Export</a>
+        <a class="btn btn--primary" href="{{ url_for('admin.user_new') }}">+&nbsp;New user</a>
+    </div>
 </div>
+
+{# ---- Stat strip --------------------------------------------------------- #}
+<div class="stat-grid" style="margin-bottom: var(--sp-6);">
+    <div class="stat-card">
+        <div class="stat-card__header">
+            <p class="stat-card__label">Total accounts</p>
+            <div class="stat-card__icon stat-card__icon--indigo" aria-hidden="true">&#128101;</div>
+        </div>
+        <p class="stat-card__value">{{ users | length }}</p>
+        <p class="stat-card__delta stat-card__delta--flat">All registered</p>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__header">
+            <p class="stat-card__label">Active</p>
+            <div class="stat-card__icon stat-card__icon--green" aria-hidden="true">&#10003;</div>
+        </div>
+        <p class="stat-card__value">{{ users | selectattr('is_active') | list | length }}</p>
+        <p class="stat-card__delta stat-card__delta--up">Enabled accounts</p>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__header">
+            <p class="stat-card__label">Admins</p>
+            <div class="stat-card__icon stat-card__icon--amber" aria-hidden="true">&#9733;</div>
+        </div>
+        <p class="stat-card__value">
+            {{ users | selectattr('role', 'equalto', 'Admin') | list | length }}
+        </p>
+        <p class="stat-card__delta stat-card__delta--flat">With admin role</p>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card__header">
+            <p class="stat-card__label">Employee accounts</p>
+            <div class="stat-card__icon stat-card__icon--blue" aria-hidden="true">&#128188;</div>
+        </div>
+        <p class="stat-card__value">
+            {{ users | selectattr('employee_id') | list | length }}
+        </p>
+        <p class="stat-card__delta stat-card__delta--flat">Linked to Employees</p>
+    </div>
+</div>
+
+{# ---- Users table -------------------------------------------------------- #}
+<div class="section-block">
+    <div class="section-block__head">
+        <h2 class="section-block__title" id="users-heading">All users</h2>
+        <p class="section-block__meta">
+            {{ users | length }} account{{ "s" if users | length != 1 else "" }}
+        </p>
+    </div>
+
+    {% if users %}
+    <div class="table-wrap">
+        <table class="data-table" aria-labelledby="users-heading">
+            <thead>
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Username</th>
+                    <th scope="col">Role</th>
+                    <th scope="col">Account type</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in users %}
+                <tr>
+                    <td style="color: var(--gray-400); font-size: 0.8125rem;">{{ u.id }}</td>
+
+                    <td>
+                        <div class="name-cell">
+                            <div class="name-cell__avatar" aria-hidden="true">
+                                {{ u.username[0] | upper }}
+                            </div>
+                            <div>
+                                <div class="name-cell__primary">{{ u.username }}</div>
+                                {# Show linked employee name as secondary line #}
+                                {% if u.employee_name %}
+                                <div class="name-cell__secondary">
+                                    &#128101;&nbsp;{{ u.employee_name }}
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+
+                    <td>
+                        {% if u.role == 'Admin' %}
+                            <span class="pill pill--indigo">{{ u.role }}</span>
+                        {% else %}
+                            <span class="pill pill--gray">{{ u.role }}</span>
+                        {% endif %}
+                    </td>
+
+                    {# ---- Account type badge --------------------------------- #}
+                    <td>
+                        {% if u.employee_id %}
+                            <span class="pill pill--blue"
+                                  title="Linked to employee {{ u.employee_name }}">
+                                &#128188;&nbsp;Employee
+                            </span>
+                            {% if u.employee_department %}
+                            <span class="pill pill--gray"
+                                  style="margin-top: 4px; display: inline-flex;">
+                                {{ u.employee_department }}
+                            </span>
+                            {% endif %}
+                        {% else %}
+                            <span class="pill pill--gray">&#9998;&nbsp;Staff</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if u.is_active %}
+                            <span class="pill pill--green">Active</span>
+                        {% else %}
+                            <span class="pill pill--gray">Disabled</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        <div class="data-table__actions">
+
+                            {# ---- Existing role toggle (UNCHANGED) ---- #}
+                            {% if u.role == 'Admin' %}
+                                <form method="POST"
+                                      action="{{ url_for('admin.toggle_user_role', user_id=u.id) }}">
+                                    <input type="hidden" name="action" value="demote">
+                                    <button class="btn btn--ghost btn--sm" type="submit">
+                                        Demote
+                                    </button>
+                                </form>
+                            {% else %}
+                                <form method="POST"
+                                      action="{{ url_for('admin.toggle_user_role', user_id=u.id) }}">
+                                    <input type="hidden" name="action" value="promote">
+                                    <button class="btn btn--primary btn--sm" type="submit">
+                                        Promote
+                                    </button>
+                                </form>
+                            {% endif %}
+
+                            {# ---- Existing disable (UNCHANGED) ---- #}
+                            <form method="POST"
+                                  action="{{ url_for('admin.disable_user', user_id=u.id) }}">
+                                <button class="btn btn--ghost btn--sm" type="submit">
+                                    Disable
+                                </button>
+                            </form>
+
+                            {# ---- Edit ---- #}
+                            <a class="btn btn--ghost btn--sm"
+                               href="{{ url_for('admin.user_edit', user_id=u.id) }}">
+                                Edit
+                            </a>
+
+                            {# ---- Delete (POST + JS confirm) ---- #}
+                            <form method="POST"
+                                  action="{{ url_for('admin.user_delete', user_id=u.id) }}"
+                                  onsubmit="return confirm('Permanently delete {{ u.username | e }}? This cannot be undone.')">
+                                <button class="btn btn--danger btn--sm" type="submit">
+                                    Delete
+                                </button>
+                            </form>
+
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% else %}
+    <div style="padding: var(--sp-12) var(--sp-6); text-align: center; color: var(--gray-400);">
+        <div style="font-size: 2.5rem; margin-bottom: var(--sp-3); opacity: .4;">&#128101;</div>
+        <p style="font-size: 0.9375rem; margin: 0 0 var(--sp-4);">No users yet.</p>
+        <a class="btn btn--primary" href="{{ url_for('admin.user_new') }}">
+            + Create first user
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+
 {% endblock %}

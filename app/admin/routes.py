@@ -80,9 +80,32 @@ def login():
 @login_required
 @role_required("Admin")
 def dashboard():
+    """Admin overview page — passes stat counts for the KPI cards."""
+    total_users = active_users = admin_users = total_employees = None
+    try:
+        with get_connection() as conn:
+            cur = conn.cursor()
+            cur.execute("SELECT COUNT(*), SUM(CASE WHEN IsActive=1 THEN 1 ELSE 0 END), SUM(CASE WHEN Role='Admin' THEN 1 ELSE 0 END) FROM dbo.Users")
+            row = cur.fetchone()
+            if row:
+                total_users, active_users, admin_users = row
+            # Employees table may not exist yet — handle gracefully
+            try:
+                cur.execute("SELECT COUNT(*) FROM dbo.Employees")
+                emp_row = cur.fetchone()
+                total_employees = emp_row[0] if emp_row else 0
+            except Exception:
+                total_employees = None
+    except Exception:
+        pass  # Stats are display-only; a DB error must not break the page
+
     return render_template(
         "admin/dashboard.html",
         username=session.get("username", "Admin"),
+        total_users=total_users,
+        active_users=active_users,
+        admin_users=admin_users,
+        total_employees=total_employees,
     )
 
 
@@ -253,20 +276,39 @@ def import_report_users():
 @login_required
 @role_required("Admin")
 def users_page():
-    """List all users (Admin only)."""
+    """List all users (Admin only).
+
+    Joins to Employees to surface the linked department and show an
+    'Employee account' badge vs 'Staff account' for manually-created rows.
+    """
     with get_connection() as conn:
         cur = conn.cursor()
         cur.execute(
-            "SELECT Id, Username, Role, IsActive FROM Users ORDER BY Id"
+            """
+            SELECT
+                u.Id,
+                u.Username,
+                u.Role,
+                u.IsActive,
+                u.EmployeeId,
+                e.Name        AS EmployeeName,
+                e.Department  AS EmployeeDepartment
+            FROM dbo.Users u
+            LEFT JOIN dbo.Employees e ON e.Id = u.EmployeeId
+            ORDER BY u.Id
+            """
         )
         rows = cur.fetchall()
 
     users = [
         {
-            "id": r[0],
-            "username": r[1],
-            "role": r[2],
-            "is_active": bool(r[3]),
+            "id":                  r[0],
+            "username":            r[1],
+            "role":                r[2],
+            "is_active":           bool(r[3]),
+            "employee_id":         r[4],
+            "employee_name":       r[5],
+            "employee_department": r[6],
         }
         for r in rows
     ]
@@ -660,3 +702,614 @@ def import_employees():
         flash(f"{imported_count} employee(s) imported successfully.", "success")
 
     return redirect(url_for("admin.reports"))
+
+
+# ---------------------------------------------------------------------------
+# Employees CRUD + Export
+# ---------------------------------------------------------------------------
+
+import re as _re   # used by _generate_username only; aliased to avoid shadowing
+
+
+def _generate_username(name: str, cur) -> str:
+    """Derive a unique username from an employee name.
+
+    Algorithm:
+      1. Lowercase the name, keep only ASCII letters (strips accents, spaces,
+         punctuation) → base slug, e.g. "Karim Mansour" → "karimmansour".
+         If that would be empty, fall back to "user".
+      2. Find all existing usernames that start with the slug in one query.
+      3. Return the slug if unclaimed, else slug+2, slug+3, ... (first gap).
+
+    The cursor must be an open pyodbc cursor on the same connection.
+    """
+    slug = _re.sub(r"[^a-z]", "", name.lower()) or "user"
+    # Truncate so slug + up to 3 digits fits within the 100-char Username limit
+    slug = slug[:96]
+
+    cur.execute(
+        "SELECT Username FROM dbo.Users WHERE Username LIKE ?",
+        slug + "%",
+    )
+    taken = {row[0].lower() for row in cur.fetchall()}
+
+    if slug not in taken:
+        return slug
+
+    counter = 2
+    while True:
+        candidate = f"{slug}{counter}"
+        if candidate not in taken:
+            return candidate
+        counter += 1
+
+
+def _create_linked_user(employee_id: int, employee_name: str, cur) -> str:
+    """Insert a new Users row linked to the given Employee.
+
+    Returns the plain-text temporary password (shown once in the flash
+    message — never stored or logged anywhere after this function returns).
+
+    The cursor must be an open, writable pyodbc cursor.
+    The caller is responsible for calling conn.commit().
+    """
+    username = _generate_username(employee_name, cur)
+    temp_password = secrets.token_urlsafe(10)   # 10-char URL-safe random string
+    password_hash = generate_password_hash(temp_password)
+
+    cur.execute(
+        "INSERT INTO dbo.Users "
+        "  (Username, PasswordHash, Role, IsActive, EmployeeId) "
+        "VALUES (?, ?, 'User', 1, ?)",
+        username, password_hash, employee_id,
+    )
+    return username, temp_password
+
+def _get_employee_or_404(employee_id: int) -> dict:
+    """Fetch a single employee row by Id, or raise 404 if not found."""
+    with get_connection() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT Id, Name, Department, Salary, CreatedAt "
+            "FROM dbo.Employees WHERE Id = ?",
+            employee_id,
+        )
+        row = cur.fetchone()
+    if not row:
+        from flask import abort
+        abort(404)
+    return {
+        "id": row[0],
+        "name": row[1],
+        "department": row[2],
+        "salary": row[3],
+        "created_at": row[4],
+    }
+
+
+def _validate_employee_form(name: str, department: str, salary_raw: str):
+    """Validate the Create/Edit employee form fields.
+
+    Returns (salary_int, errors) where errors is a list of strings.
+    salary_int is None when validation fails.
+    """
+    errors = []
+
+    name = name.strip()
+    department = department.strip()
+
+    if not name:
+        errors.append("Name is required.")
+    elif len(name) > 100:
+        errors.append("Name must be 100 characters or fewer.")
+
+    if not department:
+        errors.append("Department is required.")
+    elif len(department) > 100:
+        errors.append("Department must be 100 characters or fewer.")
+
+    salary = _parse_salary(salary_raw)
+    if salary is None:
+        errors.append("Salary must be a valid positive whole number.")
+    elif salary == 0:
+        errors.append("Salary must be greater than zero.")
+
+    return salary, errors
+
+
+# ---- List ----------------------------------------------------------------
+
+@admin_bp.route("/employees")
+@login_required
+@role_required("Admin")
+def employees_list():
+    """List all employees (Admin only)."""
+    with get_connection() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT Id, Name, Department, Salary, CreatedAt "
+            "FROM dbo.Employees ORDER BY Id"
+        )
+        rows = cur.fetchall()
+
+    employees = [
+        {
+            "id": r[0],
+            "name": r[1],
+            "department": r[2],
+            "salary": r[3],
+            "created_at": r[4],
+        }
+        for r in rows
+    ]
+
+    return render_template(
+        "admin/employees.html",
+        username=session.get("username", "Admin"),
+        employees=employees,
+    )
+
+
+# ---- Create --------------------------------------------------------------
+
+@admin_bp.route("/employees/new", methods=["GET"])
+@login_required
+@role_required("Admin")
+def employee_new():
+    """Show the Create Employee form."""
+    return render_template(
+        "admin/employee_form.html",
+        username=session.get("username", "Admin"),
+        form_title="New employee",
+        action=url_for("admin.employee_create"),
+        employee=None,
+        errors=[],
+    )
+
+
+@admin_bp.route("/employees/new", methods=["POST"])
+@login_required
+@role_required("Admin")
+def employee_create():
+    """Handle Create Employee form submission.
+
+    After inserting the Employee row, automatically creates a linked Users row
+    with a generated username and a one-time temporary password that is shown
+    in the flash message and never stored in plain text.
+    """
+    name = request.form.get("name", "").strip()
+    department = request.form.get("department", "").strip()
+    salary_raw = request.form.get("salary", "").strip()
+
+    salary, errors = _validate_employee_form(name, department, salary_raw)
+
+    if errors:
+        for msg in errors:
+            flash(msg, "error")
+        return render_template(
+            "admin/employee_form.html",
+            username=session.get("username", "Admin"),
+            form_title="New employee",
+            action=url_for("admin.employee_create"),
+            employee={"name": name, "department": department, "salary": salary_raw},
+            errors=errors,
+        )
+
+    with get_connection() as conn:
+        cur = conn.cursor()
+
+        # 1. Insert the Employee row and retrieve its new Id.
+        cur.execute(
+            "INSERT INTO dbo.Employees (Name, Department, Salary) "
+            "VALUES (?, ?, ?); SELECT SCOPE_IDENTITY();",
+            name, department, salary,
+        )
+        cur.nextset()                          # advance to the SELECT result
+        employee_id = int(cur.fetchone()[0])
+
+        # 2. Create the linked User account (same connection, same transaction).
+        linked_username, temp_password = _create_linked_user(
+            employee_id, name, cur
+        )
+
+        conn.commit()
+
+    # Show the temporary password ONCE — it is never stored in plain text
+    # after this point and will not appear again.
+    flash(
+        f"Employee '{name}' created. "
+        f"Login: username={linked_username}, "
+        f"password={temp_password} — share this with them, it won't be shown again.",
+        "success",
+    )
+    return redirect(url_for("admin.employees_list"))
+
+
+# ---- Update --------------------------------------------------------------
+
+@admin_bp.route("/employees/<int:employee_id>/edit", methods=["GET"])
+@login_required
+@role_required("Admin")
+def employee_edit(employee_id: int):
+    """Show the Edit Employee form pre-filled with current values."""
+    employee = _get_employee_or_404(employee_id)
+    return render_template(
+        "admin/employee_form.html",
+        username=session.get("username", "Admin"),
+        form_title=f"Edit — {employee['name']}",
+        action=url_for("admin.employee_update", employee_id=employee_id),
+        employee=employee,
+        errors=[],
+    )
+
+
+@admin_bp.route("/employees/<int:employee_id>/edit", methods=["POST"])
+@login_required
+@role_required("Admin")
+def employee_update(employee_id: int):
+    """Handle Edit Employee form submission.
+
+    If the employee's Name has changed, regenerates the linked Users.Username
+    to match (checking for duplicates).  Password is never touched.
+    """
+    existing = _get_employee_or_404(employee_id)
+
+    name = request.form.get("name", "").strip()
+    department = request.form.get("department", "").strip()
+    salary_raw = request.form.get("salary", "").strip()
+
+    salary, errors = _validate_employee_form(name, department, salary_raw)
+
+    if errors:
+        for msg in errors:
+            flash(msg, "error")
+        return render_template(
+            "admin/employee_form.html",
+            username=session.get("username", "Admin"),
+            form_title="Edit employee",
+            action=url_for("admin.employee_update", employee_id=employee_id),
+            employee={
+                "id": employee_id,
+                "name": name,
+                "department": department,
+                "salary": salary_raw,
+            },
+            errors=errors,
+        )
+
+    with get_connection() as conn:
+        cur = conn.cursor()
+
+        # Update the Employee row itself.
+        cur.execute(
+            "UPDATE dbo.Employees SET Name = ?, Department = ?, Salary = ? "
+            "WHERE Id = ?",
+            name, department, salary, employee_id,
+        )
+
+        # If the Name changed, regenerate the linked user's Username.
+        if name != existing["name"]:
+            cur.execute(
+                "SELECT Id, Username FROM dbo.Users WHERE EmployeeId = ?",
+                employee_id,
+            )
+            linked = cur.fetchone()
+            if linked:
+                linked_user_id, old_username = linked[0], linked[1]
+                new_username = _generate_username(name, cur)
+                cur.execute(
+                    "UPDATE dbo.Users SET Username = ? WHERE Id = ?",
+                    new_username, linked_user_id,
+                )
+
+        conn.commit()
+
+    flash(f"Employee '{name}' updated successfully.", "success")
+    return redirect(url_for("admin.employees_list"))
+
+
+# ---- Delete --------------------------------------------------------------
+
+@admin_bp.route("/employees/<int:employee_id>/delete", methods=["POST"])
+@login_required
+@role_required("Admin")
+def employee_delete(employee_id: int):
+    """Delete an Employee row and deactivate its linked Users account.
+
+    The Users row is set to IsActive=0 (soft-delete) rather than hard-deleted
+    so the audit trail is preserved.  The EmployeeId FK value is left in place
+    so the link is still visible in the Users table.
+    """
+    employee = _get_employee_or_404(employee_id)
+    name = employee["name"]
+
+    with get_connection() as conn:
+        cur = conn.cursor()
+
+        # Deactivate the linked user account first (preserves audit trail).
+        cur.execute(
+            "UPDATE dbo.Users SET IsActive = 0 "
+            "WHERE EmployeeId = ?",
+            employee_id,
+        )
+
+        # Now delete the Employee row.
+        # The FK allows NULL so the Users row stays after this delete.
+        cur.execute(
+            "UPDATE dbo.Users SET EmployeeId = NULL WHERE EmployeeId = ?",
+            employee_id,
+        )
+        cur.execute("DELETE FROM dbo.Employees WHERE Id = ?", employee_id)
+        conn.commit()
+
+    flash(
+        f"Employee '{name}' deleted. "
+        f"The linked login account has been deactivated.",
+        "success",
+    )
+    return redirect(url_for("admin.employees_list"))
+
+
+# ---- Export --------------------------------------------------------------
+
+@admin_bp.route("/employees/export")
+@login_required
+@role_required("Admin")
+def export_employees():
+    """Export all employees to an Excel workbook (Admin only)."""
+    with get_connection() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT Id, Name, Department, Salary, CreatedAt "
+            "FROM dbo.Employees ORDER BY Id"
+        )
+        rows = cur.fetchall()
+
+    workbook = Workbook()
+    worksheet = workbook.active
+    worksheet.title = "Employees"
+    worksheet.append(["Id", "Name", "Department", "Salary", "CreatedAt"])
+
+    for row in rows:
+        worksheet.append([row[0], row[1], row[2], row[3], row[4]])
+
+    output = BytesIO()
+    workbook.save(output)
+    output.seek(0)
+
+    filename = f"employees_export_{date.today().isoformat()}.xlsx"
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name=filename,
+        mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+
+# ---------------------------------------------------------------------------
+# Users CRUD  (Create / Update / Delete)
+# toggle_user_role and disable_user above are kept unchanged.
+# ---------------------------------------------------------------------------
+
+def _get_user_or_404(user_id: int) -> dict:
+    """Fetch a single user row by Id, abort 404 if missing."""
+    with get_connection() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT Id, Username, Role, IsActive FROM dbo.Users WHERE Id = ?",
+            user_id,
+        )
+        row = cur.fetchone()
+    if not row:
+        from flask import abort
+        abort(404)
+    return {
+        "id":        row[0],
+        "username":  row[1],
+        "role":      row[2],
+        "is_active": bool(row[3]),
+    }
+
+
+def _validate_user_form(username: str, password: str, role: str,
+                        is_edit: bool = False) -> list[str]:
+    """Validate the Create / Edit user form.
+
+    Returns a (possibly empty) list of error strings.
+    On edit, password is optional — an empty string means "keep existing".
+    """
+    errors = []
+
+    username = username.strip()
+    role = role.strip()
+
+    if not username:
+        errors.append("Username is required.")
+    elif len(username) > 100:
+        errors.append("Username must be 100 characters or fewer.")
+
+    if not is_edit and not password:
+        errors.append("Password is required.")
+    if password and len(password) < 6:
+        errors.append("Password must be at least 6 characters.")
+
+    if role not in ALLOWED_IMPORT_ROLES:
+        errors.append("Role must be Admin or User.")
+
+    return errors
+
+
+# ---- Create ---------------------------------------------------------------
+
+@admin_bp.route("/users/new", methods=["GET"])
+@login_required
+@role_required("Admin")
+def user_new():
+    """Show the Create User form."""
+    return render_template(
+        "admin/user_form.html",
+        username=session.get("username", "Admin"),
+        form_title="New user",
+        action=url_for("admin.user_create"),
+        user=None,
+        errors=[],
+    )
+
+
+@admin_bp.route("/users/new", methods=["POST"])
+@login_required
+@role_required("Admin")
+def user_create():
+    """Handle Create User form submission."""
+    new_username = request.form.get("username", "").strip()
+    password     = request.form.get("password", "")
+    role         = request.form.get("role", "User").strip()
+
+    errors = _validate_user_form(new_username, password, role, is_edit=False)
+
+    if errors:
+        for msg in errors:
+            flash(msg, "error")
+        return render_template(
+            "admin/user_form.html",
+            username=session.get("username", "Admin"),
+            form_title="New user",
+            action=url_for("admin.user_create"),
+            user={"username": new_username, "role": role},
+            errors=errors,
+        )
+
+    # create_user() in repository handles hashing + duplicate check.
+    from app.auth.repository import create_user
+    result = create_user(new_username, password, role)
+
+    if result is None:
+        flash(f"Username '{new_username}' is already taken.", "error")
+        return render_template(
+            "admin/user_form.html",
+            username=session.get("username", "Admin"),
+            form_title="New user",
+            action=url_for("admin.user_create"),
+            user={"username": new_username, "role": role},
+            errors=[],
+        )
+
+    flash(f"User '{new_username}' created successfully.", "success")
+    return redirect(url_for("admin.users_page"))
+
+
+# ---- Update ---------------------------------------------------------------
+
+@admin_bp.route("/users/<int:user_id>/edit", methods=["GET"])
+@login_required
+@role_required("Admin")
+def user_edit(user_id: int):
+    """Show the Edit User form pre-filled with current values."""
+    user = _get_user_or_404(user_id)
+    return render_template(
+        "admin/user_form.html",
+        username=session.get("username", "Admin"),
+        form_title=f"Edit — {user['username']}",
+        action=url_for("admin.user_update", user_id=user_id),
+        user=user,
+        errors=[],
+    )
+
+
+@admin_bp.route("/users/<int:user_id>/edit", methods=["POST"])
+@login_required
+@role_required("Admin")
+def user_update(user_id: int):
+    """Handle Edit User form submission."""
+    existing = _get_user_or_404(user_id)
+
+    new_username = request.form.get("username", "").strip()
+    password     = request.form.get("password", "")   # blank = keep existing
+    role         = request.form.get("role", "User").strip()
+
+    errors = _validate_user_form(new_username, password, role, is_edit=True)
+
+    # Safety: if changing from Admin → User, ensure another active admin exists.
+    if not errors and existing["role"] == "Admin" and role == "User":
+        remaining = _count_active_admins(exclude_user_id=user_id)
+        if remaining <= 0:
+            errors.append(
+                "Cannot change role: at least one active Admin must remain."
+            )
+
+    if errors:
+        for msg in errors:
+            flash(msg, "error")
+        return render_template(
+            "admin/user_form.html",
+            username=session.get("username", "Admin"),
+            form_title=f"Edit user",
+            action=url_for("admin.user_update", user_id=user_id),
+            user={"id": user_id, "username": new_username, "role": role},
+            errors=errors,
+        )
+
+    # Check for username collision with a *different* user.
+    with get_connection() as conn:
+        cur = conn.cursor()
+        cur.execute(
+            "SELECT Id FROM dbo.Users WHERE Username = ? AND Id <> ?",
+            new_username, user_id,
+        )
+        if cur.fetchone():
+            flash(f"Username '{new_username}' is already taken.", "error")
+            return render_template(
+                "admin/user_form.html",
+                username=session.get("username", "Admin"),
+                form_title=f"Edit user",
+                action=url_for("admin.user_update", user_id=user_id),
+                user={"id": user_id, "username": new_username, "role": role},
+                errors=[],
+            )
+
+        if password:
+            cur.execute(
+                "UPDATE dbo.Users SET Username = ?, Role = ?, PasswordHash = ? "
+                "WHERE Id = ?",
+                new_username, role, generate_password_hash(password), user_id,
+            )
+        else:
+            cur.execute(
+                "UPDATE dbo.Users SET Username = ?, Role = ? WHERE Id = ?",
+                new_username, role, user_id,
+            )
+        conn.commit()
+
+    flash(f"User '{new_username}' updated successfully.", "success")
+    return redirect(url_for("admin.users_page"))
+
+
+# ---- Delete ---------------------------------------------------------------
+
+@admin_bp.route("/users/<int:user_id>/delete", methods=["POST"])
+@login_required
+@role_required("Admin")
+def user_delete(user_id: int):
+    """Permanently delete a user row.
+
+    Safety: blocks deletion of the last active Admin — same protection as
+    disable_user / toggle_user_role.
+    """
+    user = _get_user_or_404(user_id)
+
+    if user["role"] == "Admin" and user["is_active"]:
+        remaining = _count_active_admins(exclude_user_id=user_id)
+        if remaining <= 0:
+            flash(
+                "Cannot delete: at least one active Admin account must remain.",
+                "warning",
+            )
+            return redirect(url_for("admin.users_page"))
+
+    with get_connection() as conn:
+        cur = conn.cursor()
+        cur.execute("DELETE FROM dbo.Users WHERE Id = ?", user_id)
+        conn.commit()
+
+    flash(f"User '{user['username']}' deleted.", "success")
+    return redirect(url_for("admin.users_page"))

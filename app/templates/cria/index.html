@@ -1,256 +1,343 @@
-{% extends "admin/dashboard.html" %}
+{% extends "admin/layout.html" %}
+{% set active_page = "cria" %}
 
-{% block title %}CRIA · CRMIAA{% endblock %}
+{% block title %}AI Assistant · CRMIAA{% endblock %}
 
-{% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+{% block extra_styles %}
 <link rel="stylesheet" href="{{ url_for('static', filename='css/cria.css') }}">
 {% endblock %}
 
-{% block content %}
-<div class="admin-layout">
+{% block page_content %}
 
-    <header class="topbar">
-        <a class="topbar__brand" href="{{ url_for('admin.dashboard') }}" aria-label="CRMIAA home">
-            <div class="topbar__logo" aria-hidden="true">C</div>
-            <span class="topbar__name">CRMIAA</span>
-        </a>
-        <div class="topbar__actions">
-            <span class="topbar__user">
-                <span class="topbar__avatar" aria-hidden="true">{{ username[0] | upper }}</span>
-                {{ username }}
-            </span>
-            <a class="btn btn--ghost btn--sm" href="{{ url_for('admin.dashboard') }}">Dashboard</a>
-            <a class="btn btn--ghost btn--sm" href="{{ url_for('auth.logout') }}">Sign out</a>
+{# ---- Chat page header --------------------------------------------------- #}
+<div class="chat-header">
+    <h1 class="chat-header__title">Hello, {{ username }}</h1>
+    <p class="chat-header__sub">How can CRMIAA assist your data analysis today?</p>
+
+    {# Dataset info pill #}
+    <div class="chat-dataset-pill" aria-label="Dataset summary">
+        <span class="chat-dataset-pill__dot" aria-hidden="true"></span>
+        <strong>{{ row_count }}</strong>&nbsp;row{{ "s" if row_count != 1 else "" }}&nbsp;&middot;&nbsp;
+        {% for column in columns %}<code>{{ column }}</code>{% if not loop.last %}, {% endif %}{% endfor %}
+        &nbsp;&middot;&nbsp;
+        <span class="chat-dataset-pill__source">{{ data_source if data_source is defined else 'dataset loaded' }}</span>
+    </div>
+</div>
+
+{# ---- Tab switcher (preserved — JS depends on .cria-tab / .is-active) --- #}
+<div class="cria-tabs chat-tabs" role="tablist" aria-label="CRIA actions">
+    <button type="button"
+            class="cria-tab{% if active_tab == 'ask' %} is-active{% endif %}"
+            data-tab="ask" role="tab"
+            aria-selected="{{ 'true' if active_tab == 'ask' else 'false' }}">
+        &#129302; Ask AI
+    </button>
+    <button type="button"
+            class="cria-tab{% if active_tab == 'filter' %} is-active{% endif %}"
+            data-tab="filter" role="tab"
+            aria-selected="{{ 'true' if active_tab == 'filter' else 'false' }}">
+        &#128269; Filter data
+    </button>
+    <button type="button"
+            class="cria-tab{% if active_tab == 'graph' %} is-active{% endif %}"
+            data-tab="graph" role="tab"
+            aria-selected="{{ 'true' if active_tab == 'graph' else 'false' }}">
+        &#128202; Draw chart
+    </button>
+</div>
+
+{# ===========================================================================
+   Panel: Ask AI  (chat-style)
+   form action/method/name attrs unchanged
+   =========================================================================== #}
+<section id="panel-ask"
+         class="cria-panel{% if active_tab == 'ask' %} is-active{% endif %}"
+         role="tabpanel">
+
+    {# Chat history area #}
+    <div class="chat-history" aria-live="polite" aria-label="Conversation">
+
+        {% if ask_question %}
+        {# User bubble — right-aligned indigo #}
+        <div class="chat-bubble chat-bubble--user">
+            <p>{{ ask_question }}</p>
         </div>
-    </header>
+        {% endif %}
 
-    <main class="admin-main">
-
-        <section class="hero" aria-label="Page header">
-            <p class="hero__eyebrow">Admin Console</p>
-            <h1 class="hero__title">CRIA</h1>
-            <p class="hero__subtitle">
-                Ask questions, filter data, and draw charts from the loaded dataset.
-            </p>
-        </section>
-
-        <section class="cria-info" aria-label="Dataset summary">
-            <h2 class="cria-info__title">Loaded dataset</h2>
-            <p class="cria-info__meta">
-                <strong>{{ row_count }}</strong> row{{ "s" if row_count != 1 else "" }}
-                &middot; columns:
-                {% for column in columns %}
-                    <code>{{ column }}</code>{% if not loop.last %}, {% endif %}
-                {% endfor %}
-            </p>
-        </section>
-
-        <div class="cria-tabs" role="tablist" aria-label="CRIA actions">
-            <button type="button"
-                    class="cria-tab{% if active_tab == 'ask' %} is-active{% endif %}"
-                    data-tab="ask" role="tab"
-                    aria-selected="{{ 'true' if active_tab == 'ask' else 'false' }}">
-                Ask a question
-            </button>
-            <button type="button"
-                    class="cria-tab{% if active_tab == 'filter' %} is-active{% endif %}"
-                    data-tab="filter" role="tab"
-                    aria-selected="{{ 'true' if active_tab == 'filter' else 'false' }}">
-                Filter data
-            </button>
-            <button type="button"
-                    class="cria-tab{% if active_tab == 'graph' %} is-active{% endif %}"
-                    data-tab="graph" role="tab"
-                    aria-selected="{{ 'true' if active_tab == 'graph' else 'false' }}">
-                Draw a graph
-            </button>
+        {% if ask_answer %}
+        {# AI bubble — left-aligned white #}
+        <div class="chat-bubble chat-bubble--ai">
+            <div class="chat-bubble__avatar" aria-hidden="true">&#129302;</div>
+            <div class="chat-bubble__body">
+                <p>{{ ask_answer }}</p>
+            </div>
         </div>
+        {% endif %}
 
-        {# ---- Ask panel -------------------------------------------------- #}
-        <section id="panel-ask"
-                 class="cria-panel{% if active_tab == 'ask' %} is-active{% endif %}"
-                 role="tabpanel" aria-labelledby="tab-ask">
-            <form class="cria-form" method="POST" action="{{ url_for('cria.ask') }}">
-                <h2 class="cria-form__title">Ask a question about the data</h2>
-                <p class="cria-form__meta">Your question is masked before being sent to the AI.</p>
+        {% if not ask_question and not ask_answer %}
+        <div class="chat-empty">
+            <div class="chat-empty__icon" aria-hidden="true">&#129302;</div>
+            <p class="chat-empty__text">Ask anything about your data. Your question is masked before it reaches the AI.</p>
+        </div>
+        {% endif %}
 
-                <div class="cria-field">
-                    <label for="question">Question</label>
-                    <textarea id="question" name="question" required
-                              placeholder="e.g. Who earns the most?">{{ ask_question or "" }}</textarea>
-                </div>
+    </div>
 
-                <button class="btn btn--primary" type="submit">Ask</button>
+    {# Quick-action pills #}
+    <div class="chat-pills" aria-label="Suggested queries">
+        <button type="button" class="chat-pill" data-fill="Who earns the most?">
+            &#8679; Top earner
+        </button>
+        <button type="button" class="chat-pill" data-fill="How many employees are in each department?">
+            &#128101; Dept. breakdown
+        </button>
+        <button type="button" class="chat-pill" data-fill="What is the average salary?">
+            &#8776; Avg. salary
+        </button>
+        <button type="button" class="chat-pill" data-fill="What's a good strategy to increase employee retention?">
+            &#128161; General advice
+        </button>
+    </div>
 
-                {% if ask_answer %}
-                <div class="cria-result">
-                    <p class="cria-result__title">Answer</p>
-                    <p>{{ ask_answer }}</p>
-                </div>
-                {% endif %}
-            </form>
-        </section>
+    {# Input bar — form action/method/name unchanged #}
+    <form class="chat-input-bar" method="POST" action="{{ url_for('cria.ask') }}">
+        <textarea class="chat-input-bar__textarea"
+                  id="question" name="question"
+                  rows="1"
+                  placeholder="Type your CRM query here…"
+                  required
+                  aria-label="Question">{{ ask_question or "" }}</textarea>
+        <button class="chat-input-bar__send btn btn--primary btn--icon"
+                type="submit" aria-label="Send">
+            &#8679;
+        </button>
+    </form>
+</section>
 
-        {# ---- Filter panel ----------------------------------------------- #}
-        <section id="panel-filter"
-                 class="cria-panel{% if active_tab == 'filter' %} is-active{% endif %}"
-                 role="tabpanel" aria-labelledby="tab-filter">
-            <form class="cria-form" method="POST" action="{{ url_for('cria.filter_rows') }}">
-                <h2 class="cria-form__title">Filter the data</h2>
-                <p class="cria-form__meta">Use plain English, e.g. <code>salary above 50000</code>.</p>
+{# ===========================================================================
+   Panel: Filter data
+   form action/method/name attrs unchanged
+   =========================================================================== #}
+<section id="panel-filter"
+         class="cria-panel{% if active_tab == 'filter' %} is-active{% endif %}"
+         role="tabpanel">
 
-                <div class="cria-field">
-                    <label for="filter_text">Filter request</label>
-                    <input id="filter_text" name="filter_text" type="text" required
-                           value="{{ filter_text or '' }}"
-                           placeholder="salary above 50000">
-                </div>
+    <div class="chat-history" aria-live="polite">
 
-                <button class="btn btn--primary" type="submit">Apply filter</button>
-
-                {% if filter_rows is defined %}
-                <div class="cria-result">
-                    <p class="cria-result__title">Filtered rows</p>
-                    {% if filter_rows %}
-                    <div class="cria-result__table">
-                        <table class="cria-table">
+        {% if filter_rows is defined %}
+            {% if filter_rows %}
+            {# User bubble #}
+            <div class="chat-bubble chat-bubble--user">
+                <p>{{ filter_text }}</p>
+            </div>
+            {# AI result bubble #}
+            <div class="chat-bubble chat-bubble--ai chat-bubble--wide">
+                <div class="chat-bubble__avatar" aria-hidden="true">&#129302;</div>
+                <div class="chat-bubble__body">
+                    <p class="chat-bubble__label">Found {{ filter_rows | length }} matching row{{ "s" if filter_rows | length != 1 else "" }}</p>
+                    <div class="chat-result-table">
+                        <table class="data-table">
                             <thead>
                                 <tr>
-                                    {% for column in filter_columns %}
-                                    <th>{{ column }}</th>
+                                    {% for col in filter_columns %}
+                                    <th scope="col">{{ col }}</th>
                                     {% endfor %}
                                 </tr>
                             </thead>
                             <tbody>
                                 {% for row in filter_rows %}
                                 <tr>
-                                    {% for column in filter_columns %}
-                                    <td>{{ row[column] }}</td>
+                                    {% for col in filter_columns %}
+                                    <td>{{ row[col] }}</td>
                                     {% endfor %}
                                 </tr>
                                 {% endfor %}
                             </tbody>
                         </table>
                     </div>
-                    {% else %}
-                    <p>No matching rows.</p>
-                    {% endif %}
                 </div>
-                {% endif %}
-            </form>
-        </section>
+            </div>
+            {% else %}
+            <div class="chat-bubble chat-bubble--ai">
+                <div class="chat-bubble__avatar" aria-hidden="true">&#129302;</div>
+                <div class="chat-bubble__body"><p>No rows matched that filter.</p></div>
+            </div>
+            {% endif %}
+        {% else %}
+        <div class="chat-empty">
+            <div class="chat-empty__icon" aria-hidden="true">&#128269;</div>
+            <p class="chat-empty__text">Describe the rows you want in plain English, e.g. <em>salary above 50000</em>.</p>
+        </div>
+        {% endif %}
 
-        {# ---- Graph panel ------------------------------------------------- #}
-        <section id="panel-graph"
-                 class="cria-panel{% if active_tab == 'graph' %} is-active{% endif %}"
-                 role="tabpanel" aria-labelledby="tab-graph">
-            <form class="cria-form" method="POST" action="{{ url_for('cria.graph') }}">
-                <h2 class="cria-form__title">Draw a graph</h2>
-                <p class="cria-form__meta">
-                    Available columns:
-                    {% for column in columns %}
-                        <code>{{ column }}</code>{% if not loop.last %}, {% endif %}
-                    {% endfor %}
-                </p>
+    </div>
 
-                <div class="cria-field">
-                    <label for="chart_type">Chart type</label>
-                    <select id="chart_type" name="chart_type" required>
-                        <option value="bar"{% if chart_type == 'bar' %} selected{% endif %}>Bar chart</option>
-                        <option value="pie"{% if chart_type == 'pie' %} selected{% endif %}>Pie chart</option>
-                    </select>
-                </div>
+    <div class="chat-pills">
+        <button type="button" class="chat-pill" data-fill="salary above 50000">Salary &gt; 50k</button>
+        <button type="button" class="chat-pill" data-fill="department is Finance">Finance dept.</button>
+        <button type="button" class="chat-pill" data-fill="salary below 40000">Low earners</button>
+    </div>
 
-                <div class="cria-field">
-                    <label for="graph_filter_text">Optional filter (plain English)</label>
-                    <input id="graph_filter_text" name="filter_text" type="text"
-                           value="{{ filter_text or '' }}"
-                           placeholder="e.g. department is Finance">
-                </div>
+    <form class="chat-input-bar" method="POST" action="{{ url_for('cria.filter_rows') }}">
+        <input class="chat-input-bar__textarea"
+               id="filter_text" name="filter_text"
+               type="text"
+               placeholder="e.g. salary above 50000"
+               value="{{ filter_text or '' }}"
+               required
+               aria-label="Filter request">
+        <button class="chat-input-bar__send btn btn--primary btn--icon"
+                type="submit" aria-label="Apply filter">&#8679;</button>
+    </form>
+</section>
 
-                <div class="cria-chart-fields" data-chart-type="{{ chart_type or 'bar' }}">
-                    <div class="cria-columns">
-                        <div class="cria-field bar-only">
-                            <label for="x_column">X-axis column</label>
-                            <input id="x_column" name="x_column" type="text"
-                                   value="{{ x_column or '' }}" placeholder="name">
-                        </div>
-                        <div class="cria-field bar-only">
-                            <label for="y_column">Y-axis column (numeric)</label>
-                            <input id="y_column" name="y_column" type="text"
-                                   value="{{ y_column or '' }}" placeholder="salary">
-                        </div>
-                        <div class="cria-field pie-only">
-                            <label for="label_column">Label column</label>
-                            <input id="label_column" name="label_column" type="text"
-                                   value="{{ label_column or '' }}" placeholder="department">
-                        </div>
-                        <div class="cria-field pie-only">
-                            <label for="value_column">Value column (numeric)</label>
-                            <input id="value_column" name="value_column" type="text"
-                                   value="{{ value_column or '' }}" placeholder="salary">
-                        </div>
-                    </div>
-                </div>
+{# ===========================================================================
+   Panel: Draw chart
+   All name/id attrs and .cria-chart-fields / data-chart-type preserved
+   =========================================================================== #}
+<section id="panel-graph"
+         class="cria-panel{% if active_tab == 'graph' %} is-active{% endif %}"
+         role="tabpanel">
 
-                <div class="cria-field">
-                    <label for="title">Chart title (optional)</label>
-                    <input id="title" name="title" type="text"
-                           value="{{ title or '' }}"
-                           placeholder="Leave blank to auto-generate">
-                </div>
+    <div class="chat-history">
 
-                <button class="btn btn--primary" type="submit">Generate chart</button>
+        {% if chart_filename %}
+        <div class="chat-bubble chat-bubble--user">
+            <p>{{ chart_type | title }} chart{% if title %}: {{ title }}{% endif %}</p>
+        </div>
+        <div class="chat-bubble chat-bubble--ai chat-bubble--wide">
+            <div class="chat-bubble__avatar" aria-hidden="true">&#128202;</div>
+            <div class="chat-bubble__body">
+                <img class="chat-chart-img"
+                     src="{{ url_for('static', filename=chart_filename) }}"
+                     alt="Generated chart">
+            </div>
+        </div>
+        {% else %}
+        <div class="chat-empty">
+            <div class="chat-empty__icon" aria-hidden="true">&#128202;</div>
+            <p class="chat-empty__text">
+                Configure a chart below and hit Generate.
+                Available columns:
+                {% for column in columns %}<code>{{ column }}</code>{% if not loop.last %}, {% endif %}{% endfor %}
+            </p>
+        </div>
+        {% endif %}
 
-                {% if chart_filename %}
-                <div class="cria-result">
-                    <p class="cria-result__title">Generated chart</p>
-                    <img class="cria-chart"
-                         src="{{ url_for('static', filename=chart_filename) }}"
-                         alt="Generated chart">
-                </div>
-                {% endif %}
-            </form>
-        </section>
+    </div>
 
-    </main>
-</div>
+    {# Chart config form — all name/id/action/method unchanged #}
+    <form class="chat-chart-form" method="POST" action="{{ url_for('cria.graph') }}">
+
+        <div class="chat-chart-form__row">
+            <div class="chat-chart-form__field">
+                <label class="chat-chart-form__label" for="chart_type">Chart type</label>
+                <select class="chat-chart-form__input" id="chart_type" name="chart_type" required>
+                    <option value="bar" {% if chart_type == 'bar' %}selected{% endif %}>Bar chart</option>
+                    <option value="pie" {% if chart_type == 'pie' %}selected{% endif %}>Pie chart</option>
+                </select>
+            </div>
+            <div class="chat-chart-form__field">
+                <label class="chat-chart-form__label" for="title">Title (optional)</label>
+                <input class="chat-chart-form__input" id="title" name="title"
+                       type="text" value="{{ title or '' }}" placeholder="Auto-generate">
+            </div>
+            <div class="chat-chart-form__field">
+                <label class="chat-chart-form__label" for="graph_filter_text">Filter (optional)</label>
+                <input class="chat-chart-form__input" id="graph_filter_text" name="filter_text"
+                       type="text" value="{{ filter_text or '' }}"
+                       placeholder="e.g. department is Finance">
+            </div>
+        </div>
+
+        {# JS-controlled field visibility — class names PRESERVED #}
+        <div class="cria-chart-fields chat-chart-form__row"
+             data-chart-type="{{ chart_type or 'bar' }}">
+            <div class="chat-chart-form__field bar-only">
+                <label class="chat-chart-form__label" for="x_column">X-axis column</label>
+                <input class="chat-chart-form__input" id="x_column" name="x_column"
+                       type="text" value="{{ x_column or '' }}" placeholder="name">
+            </div>
+            <div class="chat-chart-form__field bar-only">
+                <label class="chat-chart-form__label" for="y_column">Y-axis column</label>
+                <input class="chat-chart-form__input" id="y_column" name="y_column"
+                       type="text" value="{{ y_column or '' }}" placeholder="salary">
+            </div>
+            <div class="chat-chart-form__field pie-only">
+                <label class="chat-chart-form__label" for="label_column">Label column</label>
+                <input class="chat-chart-form__input" id="label_column" name="label_column"
+                       type="text" value="{{ label_column or '' }}" placeholder="department">
+            </div>
+            <div class="chat-chart-form__field pie-only">
+                <label class="chat-chart-form__label" for="value_column">Value column</label>
+                <input class="chat-chart-form__input" id="value_column" name="value_column"
+                       type="text" value="{{ value_column or '' }}" placeholder="salary">
+            </div>
+        </div>
+
+        <div class="chat-chart-form__actions">
+            <button class="btn btn--primary" type="submit">&#128202; Generate chart</button>
+        </div>
+
+    </form>
+</section>
+
 {% endblock %}
 
 {% block scripts %}
 <script>
-    const tabs = document.querySelectorAll(".cria-tab");
-    const panels = document.querySelectorAll(".cria-panel");
-    const chartTypeSelect = document.getElementById("chart_type");
-    const chartFields = document.querySelector(".cria-chart-fields");
+(function () {
+    "use strict";
 
-    tabs.forEach((tab) => {
-        tab.addEventListener("click", () => {
-            const target = tab.dataset.tab;
+    /* ---- Tab switching — preserves .cria-tab / .is-active / data-tab ---- */
+    var tabs   = document.querySelectorAll(".cria-tab");
+    var panels = document.querySelectorAll(".cria-panel");
 
-            tabs.forEach((item) => {
-                const isActive = item.dataset.tab === target;
-                item.classList.toggle("is-active", isActive);
-                item.setAttribute("aria-selected", isActive ? "true" : "false");
+    tabs.forEach(function (tab) {
+        tab.addEventListener("click", function () {
+            var target = tab.dataset.tab;
+            tabs.forEach(function (t) {
+                var on = t.dataset.tab === target;
+                t.classList.toggle("is-active", on);
+                t.setAttribute("aria-selected", on ? "true" : "false");
             });
-
-            panels.forEach((panel) => {
-                panel.classList.toggle("is-active", panel.id === `panel-${target}`);
+            panels.forEach(function (p) {
+                p.classList.toggle("is-active", p.id === "panel-" + target);
             });
         });
     });
 
+    /* ---- Chart-type field visibility — preserves data-chart-type -------- */
+    var chartTypeSelect = document.getElementById("chart_type");
+    var chartFields     = document.querySelector(".cria-chart-fields");
+
     function syncChartFields() {
-        if (!chartTypeSelect || !chartFields) {
-            return;
-        }
+        if (!chartTypeSelect || !chartFields) return;
         chartFields.dataset.chartType = chartTypeSelect.value;
     }
-
     if (chartTypeSelect) {
         chartTypeSelect.addEventListener("change", syncChartFields);
         syncChartFields();
     }
+
+    /* ---- Quick-action pill fill ----------------------------------------- */
+    document.querySelectorAll(".chat-pill").forEach(function (pill) {
+        pill.addEventListener("click", function () {
+            var fill   = pill.dataset.fill;
+            var panel  = pill.closest(".cria-panel");
+            var target = panel ? panel.querySelector("textarea, input[type=text]") : null;
+            if (target && fill) { target.value = fill; target.focus(); }
+        });
+    });
+
+    /* ---- Auto-grow textarea --------------------------------------------- */
+    document.querySelectorAll(".chat-input-bar__textarea").forEach(function (ta) {
+        if (ta.tagName !== "TEXTAREA") return;
+        ta.addEventListener("input", function () {
+            ta.style.height = "auto";
+            ta.style.height = Math.min(ta.scrollHeight, 160) + "px";
+        });
+    });
+}());
 </script>
 {% endblock %}

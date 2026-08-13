@@ -1,104 +1,84 @@
-{% extends "admin/dashboard.html" %}
+{% extends "admin/layout.html" %}
+{% set active_page = "reports" %}
 
 {% block title %}Reports · CRMIAA{% endblock %}
 
-{% block content %}
-<div class="admin-layout">
+{% block page_content %}
 
-    <header class="topbar">
-        <a class="topbar__brand" href="{{ url_for('admin.dashboard') }}" aria-label="CRMIAA home">
-            <div class="topbar__logo" aria-hidden="true">C</div>
-            <span class="topbar__name">CRMIAA</span>
-        </a>
-        <div class="topbar__actions">
-            <span class="topbar__user">
-                <span class="topbar__avatar" aria-hidden="true">{{ username[0] | upper }}</span>
-                {{ username }}
-            </span>
-            <a class="btn btn--ghost btn--sm" href="{{ url_for('admin.dashboard') }}">Dashboard</a>
-            <a class="btn btn--ghost btn--sm" href="{{ url_for('auth.logout') }}">Sign out</a>
-        </div>
-    </header>
-
-    <main class="admin-main">
-
-        <section class="hero" aria-label="Page header">
-            <p class="hero__eyebrow">Admin Console</p>
-            <h1 class="hero__title">Reports</h1>
-            <p class="hero__subtitle">Import user accounts or employee CRM data from Excel workbooks.</p>
-        </section>
-
-        {# ------------------------------------------------------------------ #}
-        {# Section 1 — UNCHANGED: import users into dbo.Users                 #}
-        {# ------------------------------------------------------------------ #}
-        <section class="page-section" aria-labelledby="import-users-heading">
-            <div class="page-section__header">
-                <h2 class="page-section__title" id="import-users-heading">Import users</h2>
-                <p class="page-section__meta">Add or update accounts in the <strong>Users</strong> table.</p>
-            </div>
-
-            <form class="import-widget" method="POST"
-                  action="{{ url_for('admin.import_report_users') }}"
-                  enctype="multipart/form-data">
-
-                <div class="import-widget__info">
-                    <h3 class="import-widget__title">User accounts</h3>
-                    <p class="import-widget__meta">
-                        Required columns: <strong>Username</strong>, <strong>Role</strong>.
-                        Optional column: <strong>Password</strong>.
-                    </p>
-                </div>
-
-                <div class="import-widget__actions">
-                    <label class="attachment-button" for="excel_file">
-                        <span class="attachment-button__icon" aria-hidden="true">&#128206;</span>
-                        <span id="selectedFileName">Choose .xlsx</span>
-                    </label>
-                    <input class="attachment-button__input" id="excel_file" name="excel_file"
-                           type="file" accept=".xlsx" required>
-                    <button class="btn btn--primary" type="submit">Import Users</button>
-                </div>
-
-            </form>
-        </section>
-
-        {# ------------------------------------------------------------------ #}
-        {# Section 2 — NEW: import employees into dbo.Employees               #}
-        {# ------------------------------------------------------------------ #}
-        <section class="page-section" aria-labelledby="import-employees-heading">
-            <div class="page-section__header">
-                <h2 class="page-section__title" id="import-employees-heading">Import employees</h2>
-                <p class="page-section__meta">Add CRM employee records to the <strong>Employees</strong> table (used by CRIA).</p>
-            </div>
-
-            <form class="import-widget" method="POST"
-                  action="{{ url_for('admin.import_employees') }}"
-                  enctype="multipart/form-data">
-
-                <div class="import-widget__info">
-                    <h3 class="import-widget__title">CRM employees</h3>
-                    <p class="import-widget__meta">
-                        Required columns: <strong>Name</strong>, <strong>Department</strong>,
-                        <strong>Salary</strong> (whole number).
-                        Each row creates a new employee record — duplicates are not merged.
-                    </p>
-                </div>
-
-                <div class="import-widget__actions">
-                    <label class="attachment-button" for="employees_file">
-                        <span class="attachment-button__icon" aria-hidden="true">&#128202;</span>
-                        <span id="selectedEmployeesFileName">Choose .xlsx</span>
-                    </label>
-                    <input class="attachment-button__input" id="employees_file" name="employees_file"
-                           type="file" accept=".xlsx" required>
-                    <button class="btn btn--primary" type="submit">Import Employees</button>
-                </div>
-
-            </form>
-        </section>
-
-    </main>
+<div class="page-header">
+    <div class="page-header__left">
+        <h1 class="page-title">Reports</h1>
+        <p class="page-subtitle">Import user accounts or employee CRM data from Excel workbooks.</p>
+    </div>
 </div>
+
+{# ---- Section 1: Import Users ------------------------------------------- #}
+{# form action, method, enctype, file input name/id, and JS id are UNCHANGED #}
+<div class="section-header" style="margin-top: 0;">
+    <h2 class="section-title" id="import-users-heading">Import users</h2>
+    <p class="section-meta">Adds accounts to the <strong>Users</strong> table.</p>
+</div>
+
+<form class="import-widget"
+      method="POST"
+      action="{{ url_for('admin.import_report_users') }}"
+      enctype="multipart/form-data"
+      aria-labelledby="import-users-heading">
+
+    <div class="import-widget__info">
+        <h3 class="import-widget__title">User accounts</h3>
+        <p class="import-widget__meta">
+            Required columns: <strong>Username</strong>, <strong>Role</strong>.
+            Optional: <strong>Password</strong>.
+        </p>
+    </div>
+
+    <div class="import-widget__actions">
+        <label class="attachment-button" for="excel_file">
+            <span class="attachment-button__icon" aria-hidden="true">&#128206;</span>
+            <span id="selectedFileName">Choose .xlsx</span>
+        </label>
+        <input class="attachment-button__input" id="excel_file" name="excel_file"
+               type="file" accept=".xlsx" required>
+        <button class="btn btn--primary" type="submit">Import Users</button>
+    </div>
+
+</form>
+
+{# ---- Section 2: Import Employees --------------------------------------- #}
+{# form action, method, enctype, file input name/id, and JS id are UNCHANGED #}
+<div class="section-header" style="margin-top: var(--sp-8);">
+    <h2 class="section-title" id="import-employees-heading">Import employees</h2>
+    <p class="section-meta">Adds CRM records to the <strong>Employees</strong> table (used by CRIA).</p>
+</div>
+
+<form class="import-widget"
+      method="POST"
+      action="{{ url_for('admin.import_employees') }}"
+      enctype="multipart/form-data"
+      aria-labelledby="import-employees-heading">
+
+    <div class="import-widget__info">
+        <h3 class="import-widget__title">CRM employees</h3>
+        <p class="import-widget__meta">
+            Required columns: <strong>Name</strong>, <strong>Department</strong>,
+            <strong>Salary</strong> (whole number).
+            Duplicates are not merged — each row creates a new record.
+        </p>
+    </div>
+
+    <div class="import-widget__actions">
+        <label class="attachment-button" for="employees_file">
+            <span class="attachment-button__icon" aria-hidden="true">&#128202;</span>
+            <span id="selectedEmployeesFileName">Choose .xlsx</span>
+        </label>
+        <input class="attachment-button__input" id="employees_file" name="employees_file"
+               type="file" accept=".xlsx" required>
+        <button class="btn btn--primary" type="submit">Import Employees</button>
+    </div>
+
+</form>
+
 {% endblock %}
 
 {% block scripts %}
@@ -106,19 +86,21 @@
     /* ---- Users file picker label ---- */
     const userFileInput = document.getElementById("excel_file");
     const userFileName  = document.getElementById("selectedFileName");
-    userFileInput.addEventListener("change", () => {
-        userFileName.textContent = userFileInput.files.length
-            ? userFileInput.files[0].name
-            : "Choose .xlsx";
-    });
+    if (userFileInput && userFileName) {
+        userFileInput.addEventListener("change", () => {
+            userFileName.textContent = userFileInput.files.length
+                ? userFileInput.files[0].name : "Choose .xlsx";
+        });
+    }
 
     /* ---- Employees file picker label ---- */
     const empFileInput = document.getElementById("employees_file");
     const empFileName  = document.getElementById("selectedEmployeesFileName");
-    empFileInput.addEventListener("change", () => {
-        empFileName.textContent = empFileInput.files.length
-            ? empFileInput.files[0].name
-            : "Choose .xlsx";
-    });
+    if (empFileInput && empFileName) {
+        empFileInput.addEventListener("change", () => {
+            empFileName.textContent = empFileInput.files.length
+                ? empFileInput.files[0].name : "Choose .xlsx";
+        });
+    }
 </script>
 {% endblock %}

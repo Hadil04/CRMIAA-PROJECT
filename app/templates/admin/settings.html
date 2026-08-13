@@ -1,223 +1,158 @@
-{% extends "admin/dashboard.html" %}
+{% extends "admin/layout.html" %}
+{% set active_page = "settings" %}
 
 {% block title %}Settings · CRMIAA{% endblock %}
 
-{% block content %}
-<div class="admin-layout">
+{% block page_content %}
 
-    <header class="topbar">
-        <a class="topbar__brand" href="{{ url_for('admin.dashboard') }}" aria-label="CRMIAA home">
-            <div class="topbar__logo" aria-hidden="true">C</div>
-            <span class="topbar__name">CRMIAA</span>
-        </a>
-        <div class="topbar__actions">
-            <span class="topbar__user">
-                <span class="topbar__avatar" aria-hidden="true">{{ username[0] | upper }}</span>
-                {{ username }}
-            </span>
-            <a class="btn btn--ghost btn--sm" href="{{ url_for('admin.dashboard') }}">Dashboard</a>
-            <a class="btn btn--ghost btn--sm" href="{{ url_for('auth.logout') }}">Sign out</a>
-        </div>
-    </header>
-
-    <main class="admin-main">
-
-        <section class="hero" aria-label="Page header">
-            <p class="hero__eyebrow">Admin Console</p>
-            <h1 class="hero__title">Settings</h1>
-            <p class="hero__subtitle">Configure the SQL Server database connection used by this application.</p>
-        </section>
-
-        {# ------------------------------------------------------------------ #}
-        {# Section 1 — DB connection form                                      #}
-        {# ------------------------------------------------------------------ #}
-        <section class="page-section" aria-labelledby="db-settings-heading">
-            <div class="page-section__header">
-                <h2 class="page-section__title" id="db-settings-heading">Database connection</h2>
-                <p class="page-section__meta">
-                    Saved values override the defaults in <code>.env</code> without a restart.
-                </p>
-            </div>
-
-            <form class="settings-form"
-                  method="POST"
-                  action="{{ url_for('admin.settings_save') }}"
-                  novalidate>
-
-                {# ---- Row 1: Server + Database -------------------------------- #}
-                <div class="settings-row">
-                    <div class="settings-field">
-                        <label class="settings-label" for="db_server">DB Server</label>
-                        <input class="settings-input" id="db_server" name="db_server"
-                               type="text" required
-                               value="{{ db_server }}"
-                               placeholder="e.g. .\SQLEXPRESS  or  192.168.1.10\MSSQL">
-                        <span class="settings-hint">
-                            IP / hostname, optionally with an instance name.
-                        </span>
-                    </div>
-
-                    <div class="settings-field">
-                        <label class="settings-label" for="db_name">Database name</label>
-                        <input class="settings-input" id="db_name" name="db_name"
-                               type="text" required
-                               value="{{ db_name }}"
-                               placeholder="e.g. CRMIAA">
-                    </div>
-                </div>
-
-                {# ---- Row 2: ODBC Driver + Timeout ---------------------------- #}
-                <div class="settings-row">
-                    <div class="settings-field">
-                        <label class="settings-label" for="db_driver">ODBC Driver</label>
-                        <input class="settings-input" id="db_driver" name="db_driver"
-                               type="text" required
-                               value="{{ db_driver }}"
-                               placeholder="ODBC Driver 18 for SQL Server">
-                        <span class="settings-hint">
-                            Must match a driver installed on the server.
-                            Check available drivers with <code>pyodbc.drivers()</code>.
-                        </span>
-                    </div>
-
-                    <div class="settings-field settings-field--narrow">
-                        <label class="settings-label" for="db_timeout">Timeout (s)</label>
-                        <input class="settings-input" id="db_timeout" name="db_timeout"
-                               type="number" min="1" max="120" required
-                               value="{{ db_timeout }}">
-                    </div>
-                </div>
-
-                {# ---- Windows Auth checkbox ----------------------------------- #}
-                <div class="settings-field">
-                    <label class="settings-checkbox-label">
-                        <input type="checkbox" name="db_trusted_connection"
-                               id="db_trusted_connection"
-                               value="1"
-                               {% if db_trusted %}checked{% endif %}>
-                        <span>Use Windows Authentication (Trusted_Connection=yes)</span>
-                    </label>
-                    <span class="settings-hint">
-                        When checked, the OS user running the app is used — no
-                        username/password needed.  Uncheck to use SQL Server authentication.
-                    </span>
-                </div>
-
-                {# ---- SQL auth fields (hidden when Windows auth is checked) --- #}
-                <div class="settings-sql-auth" id="sqlAuthFields">
-                    <div class="settings-row">
-                        <div class="settings-field">
-                            <label class="settings-label" for="db_username">Username</label>
-                            <input class="settings-input" id="db_username" name="db_username"
-                                   type="text" autocomplete="off"
-                                   value="{{ db_username }}"
-                                   placeholder="SQL Server login name">
-                        </div>
-
-                        <div class="settings-field">
-                            <label class="settings-label" for="db_password">Password</label>
-                            {#
-                               The password is NEVER echoed back.
-                               If one is already saved, show a placeholder.
-                               Leave blank to keep the existing password unchanged.
-                            #}
-                            <input class="settings-input" id="db_password" name="db_password"
-                                   type="password" autocomplete="new-password"
-                                   placeholder="{{ '••••••••' if has_password else 'Enter password' }}">
-                            {% if has_password %}
-                            <span class="settings-hint">
-                                Leave blank to keep the current password.
-                                Type a new one to replace it.
-                            </span>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-
-                {# ---- Advanced: Encrypt / TrustServerCertificate ------------- #}
-                <details class="settings-advanced">
-                    <summary class="settings-advanced__toggle">Advanced options</summary>
-                    <div class="settings-advanced__body">
-                        <div class="settings-row">
-                            <div class="settings-field">
-                                <label class="settings-label" for="db_encrypt">Encrypt</label>
-                                <select class="settings-input" id="db_encrypt" name="db_encrypt">
-                                    <option value="yes" {% if db_encrypt == 'yes' %}selected{% endif %}>yes</option>
-                                    <option value="no"  {% if db_encrypt == 'no'  %}selected{% endif %}>no</option>
-                                </select>
-                            </div>
-
-                            <div class="settings-field">
-                                <label class="settings-label" for="db_trust_server_certificate">
-                                    Trust server certificate
-                                </label>
-                                <select class="settings-input" id="db_trust_server_certificate"
-                                        name="db_trust_server_certificate">
-                                    <option value="yes" {% if db_trust_cert == 'yes' %}selected{% endif %}>yes</option>
-                                    <option value="no"  {% if db_trust_cert == 'no'  %}selected{% endif %}>no</option>
-                                </select>
-                                <span class="settings-hint">
-                                    Keep <em>yes</em> for local / self-signed instances.
-                                </span>
-                            </div>
-                        </div>
-                    </div>
-                </details>
-
-                {# ---- Actions ------------------------------------------------- #}
-                <div class="settings-actions">
-                    <button class="btn btn--primary" type="submit">Save settings</button>
-                </div>
-
-            </form>
-        </section>
-
-        {# ------------------------------------------------------------------ #}
-        {# Section 2 — Test connection                                         #}
-        {# ------------------------------------------------------------------ #}
-        <section class="page-section" aria-labelledby="test-conn-heading">
-            <div class="page-section__header">
-                <h2 class="page-section__title" id="test-conn-heading">Test connection</h2>
-                <p class="page-section__meta">
-                    Tries the currently saved settings against the database.
-                    Save first, then test.
-                </p>
-            </div>
-
-            <form class="settings-test-form"
-                  method="POST"
-                  action="{{ url_for('admin.settings_test_connection') }}">
-                <p class="settings-test-description">
-                    Opens a live connection to
-                    <strong>{{ db_server or '—' }}</strong> /
-                    <strong>{{ db_name or '—' }}</strong>
-                    and runs <code>SELECT 1</code> to confirm reachability.
-                </p>
-                <button class="btn btn--ghost" type="submit">
-                    Test connection
-                </button>
-            </form>
-        </section>
-
-    </main>
+<div class="page-header">
+    <div class="page-header__left">
+        <h1 class="page-title">Settings</h1>
+        <p class="page-subtitle">Configure the SQL Server database connection used by this application.</p>
+    </div>
 </div>
 
-{# ---- Inline JS: show/hide SQL auth fields based on the checkbox ---------- #}
+{# ---- Section 1: DB connection form ------------------------------------- #}
+{# All form field name/id attrs, action, method are UNCHANGED              #}
+<div class="section-header" style="margin-top: 0;">
+    <h2 class="section-title" id="db-settings-heading">Database connection</h2>
+    <p class="section-meta">Saved values override <code>.env</code> without a restart.</p>
+</div>
+
+<form class="settings-form"
+      method="POST"
+      action="{{ url_for('admin.settings_save') }}"
+      novalidate
+      aria-labelledby="db-settings-heading">
+
+    <div class="settings-row">
+        <div class="settings-field">
+            <label class="settings-label" for="db_server">DB Server</label>
+            <input class="settings-input" id="db_server" name="db_server"
+                   type="text" required value="{{ db_server }}"
+                   placeholder="e.g. .\SQLEXPRESS or 192.168.1.10">
+            <span class="settings-hint">IP / hostname, optionally with instance name.</span>
+        </div>
+        <div class="settings-field">
+            <label class="settings-label" for="db_name">Database name</label>
+            <input class="settings-input" id="db_name" name="db_name"
+                   type="text" required value="{{ db_name }}"
+                   placeholder="e.g. CRMIAA">
+        </div>
+    </div>
+
+    <div class="settings-row">
+        <div class="settings-field">
+            <label class="settings-label" for="db_driver">ODBC Driver</label>
+            <input class="settings-input" id="db_driver" name="db_driver"
+                   type="text" required value="{{ db_driver }}"
+                   placeholder="ODBC Driver 18 for SQL Server">
+            <span class="settings-hint">
+                Must match a driver installed on the server.
+                Check with <code>pyodbc.drivers()</code>.
+            </span>
+        </div>
+        <div class="settings-field settings-field--narrow">
+            <label class="settings-label" for="db_timeout">Timeout (s)</label>
+            <input class="settings-input" id="db_timeout" name="db_timeout"
+                   type="number" min="1" max="120" required value="{{ db_timeout }}">
+        </div>
+    </div>
+
+    <div class="settings-field" style="margin-bottom: var(--sp-5);">
+        <label class="settings-checkbox-label">
+            <input type="checkbox" name="db_trusted_connection"
+                   id="db_trusted_connection" value="1"
+                   {% if db_trusted %}checked{% endif %}>
+            <span>Use Windows Authentication (Trusted_Connection=yes)</span>
+        </label>
+        <span class="settings-hint">
+            When checked the OS user running the app authenticates — no credentials needed.
+        </span>
+    </div>
+
+    <div class="settings-sql-auth" id="sqlAuthFields">
+        <div class="settings-row">
+            <div class="settings-field">
+                <label class="settings-label" for="db_username">Username</label>
+                <input class="settings-input" id="db_username" name="db_username"
+                       type="text" autocomplete="off" value="{{ db_username }}"
+                       placeholder="SQL Server login name">
+            </div>
+            <div class="settings-field">
+                <label class="settings-label" for="db_password">Password</label>
+                <input class="settings-input" id="db_password" name="db_password"
+                       type="password" autocomplete="new-password"
+                       placeholder="{{ '••••••••' if has_password else 'Enter password' }}">
+                {% if has_password %}
+                <span class="settings-hint">Leave blank to keep the current password.</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <details class="settings-advanced">
+        <summary class="settings-advanced__toggle">Advanced options</summary>
+        <div class="settings-advanced__body">
+            <div class="settings-row">
+                <div class="settings-field">
+                    <label class="settings-label" for="db_encrypt">Encrypt</label>
+                    <select class="settings-input" id="db_encrypt" name="db_encrypt">
+                        <option value="yes" {% if db_encrypt == 'yes' %}selected{% endif %}>yes</option>
+                        <option value="no"  {% if db_encrypt == 'no'  %}selected{% endif %}>no</option>
+                    </select>
+                </div>
+                <div class="settings-field">
+                    <label class="settings-label" for="db_trust_server_certificate">
+                        Trust server certificate
+                    </label>
+                    <select class="settings-input" id="db_trust_server_certificate"
+                            name="db_trust_server_certificate">
+                        <option value="yes" {% if db_trust_cert == 'yes' %}selected{% endif %}>yes</option>
+                        <option value="no"  {% if db_trust_cert == 'no'  %}selected{% endif %}>no</option>
+                    </select>
+                    <span class="settings-hint">Keep <em>yes</em> for local / self-signed instances.</span>
+                </div>
+            </div>
+        </div>
+    </details>
+
+    <div class="settings-actions">
+        <button class="btn btn--primary" type="submit">Save settings</button>
+    </div>
+
+</form>
+
+{# ---- Section 2: Test connection ---------------------------------------- #}
+<div class="section-header" style="margin-top: var(--sp-8);">
+    <h2 class="section-title" id="test-conn-heading">Test connection</h2>
+    <p class="section-meta">Tries the currently saved settings. Save first, then test.</p>
+</div>
+
+<form class="settings-test-form"
+      method="POST"
+      action="{{ url_for('admin.settings_test_connection') }}"
+      aria-labelledby="test-conn-heading">
+    <p class="settings-test-description">
+        Opens a live connection to
+        <strong>{{ db_server or '—' }}</strong> /
+        <strong>{{ db_name or '—' }}</strong>
+        and runs <code>SELECT 1</code> to confirm reachability.
+    </p>
+    <button class="btn btn--ghost" type="submit">&#9654; Test connection</button>
+</form>
+
+{% endblock %}
+
 {% block scripts %}
 <script>
 (function () {
     "use strict";
-    var checkbox = document.getElementById("db_trusted_connection");
+    var checkbox  = document.getElementById("db_trusted_connection");
     var sqlFields = document.getElementById("sqlAuthFields");
-
-    function syncVisibility() {
-        sqlFields.style.display = checkbox.checked ? "none" : "";
-    }
-
-    // Initial state
-    syncVisibility();
-    checkbox.addEventListener("change", syncVisibility);
+    function sync() { sqlFields.style.display = checkbox.checked ? "none" : ""; }
+    sync();
+    checkbox.addEventListener("change", sync);
 }());
 </script>
-{% endblock %}
 {% endblock %}

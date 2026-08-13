@@ -1,87 +1,111 @@
-{% extends "base.html" %}
+{% extends "admin/layout.html" %}
+{% set active_page = "dashboard" %}
 
 {% block title %}Dashboard · CRMIAA{% endblock %}
-{% block body_class %}admin-page{% endblock %}
 
-{% block styles %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
-{% endblock %}
+{% block page_content %}
 
-{% block content %}
-<div class="admin-layout">
-
-    <header class="topbar">
-        <a class="topbar__brand" href="{{ url_for('admin.dashboard') }}" aria-label="CRMIAA home">
-            <div class="topbar__logo" aria-hidden="true">C</div>
-            <span class="topbar__name">CRMIAA</span>
-        </a>
-        <div class="topbar__actions">
-            <span class="topbar__user">
-                <span class="topbar__avatar" aria-hidden="true">{{ username[0] | upper }}</span>
-                {{ username }}
-            </span>
-            <a class="btn btn--ghost btn--sm" href="{{ url_for('auth.logout') }}">Sign out</a>
-        </div>
-    </header>
-
-    <main class="admin-main">
-
-        <section class="hero" aria-label="Welcome banner">
-            <p class="hero__eyebrow">Admin Console</p>
-            <h1 class="hero__title">Welcome back,<br>{{ username }}</h1>
-            <p class="hero__subtitle">
-                Your command center for users, reports, and AI-powered data tools.
-            </p>
-        </section>
-
-        <section class="page-section" aria-labelledby="modules-heading">
-            <div class="page-section__header">
-                <h2 class="page-section__title" id="modules-heading">Modules</h2>
-                <p class="page-section__meta">4 available</p>
-            </div>
-
-            <div class="cards">
-
-                <article class="card card--users">
-                    <div class="card__icon" aria-hidden="true">👤</div>
-                    <h3 class="card__title">Users</h3>
-                    <p class="card__text">Manage accounts, roles, and permissions across the system.</p>
-                    <div class="card__actions">
-                        <a class="btn btn--ghost" href="{{ url_for('admin.users_page') }}">Manage</a>
-                        <a class="btn btn--primary" href="{{ url_for('admin.export_users') }}">Export</a>
-                    </div>
-                </article>
-
-                <article class="card card--reports">
-                    <div class="card__icon" aria-hidden="true">📊</div>
-                    <h3 class="card__title">Reports</h3>
-                    <p class="card__text">Import user records and view activity at a glance.</p>
-                    <div class="card__actions">
-                        <a class="btn btn--primary" href="{{ url_for('admin.reports') }}">Open Reports</a>
-                    </div>
-                </article>
-
-                <article class="card card--cria">
-                    <div class="card__icon" aria-hidden="true">🤖</div>
-                    <h3 class="card__title">CRIA</h3>
-                    <p class="card__text">Ask questions, filter data, and draw charts with AI-assisted masking.</p>
-                    <div class="card__actions">
-                        <a class="btn btn--primary" href="{{ url_for('cria.index') }}">Open CRIA</a>
-                    </div>
-                </article>
-
-                <article class="card card--settings">
-                    <div class="card__icon" aria-hidden="true">⚙️</div>
-                    <h3 class="card__title">Settings</h3>
-                    <p class="card__text">Configure the database connection and application settings.</p>
-                    <div class="card__actions">
-                        <a class="btn btn--primary" href="{{ url_for('admin.settings') }}">Open Settings</a>
-                    </div>
-                </article>
-
-            </div>
-        </section>
-
-    </main>
+<div class="page-header">
+    <div class="page-header__left">
+        <h1 class="page-title">Intelligence Overview</h1>
+        <p class="page-subtitle">Welcome back, <strong>{{ username }}</strong>. Here's what's happening today.</p>
+    </div>
 </div>
+
+{# ---- Stat cards --------------------------------------------------------- #}
+<div class="stat-grid">
+    <div class="stat-card">
+        <div class="stat-card__header">
+            <p class="stat-card__label">Total Users</p>
+            <div class="stat-card__icon stat-card__icon--indigo" aria-hidden="true">&#128101;</div>
+        </div>
+        <p class="stat-card__value">{{ total_users if total_users is defined else '—' }}</p>
+        <p class="stat-card__delta stat-card__delta--flat">All registered accounts</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card__header">
+            <p class="stat-card__label">Active Users</p>
+            <div class="stat-card__icon stat-card__icon--green" aria-hidden="true">&#10003;</div>
+        </div>
+        <p class="stat-card__value">{{ active_users if active_users is defined else '—' }}</p>
+        <p class="stat-card__delta stat-card__delta--up">&#8593; Enabled accounts</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card__header">
+            <p class="stat-card__label">Total Employees</p>
+            <div class="stat-card__icon stat-card__icon--blue" aria-hidden="true">&#128188;</div>
+        </div>
+        <p class="stat-card__value">{{ total_employees if total_employees is defined else '—' }}</p>
+        <p class="stat-card__delta stat-card__delta--flat">CRM records in DB</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card__header">
+            <p class="stat-card__label">Admin Accounts</p>
+            <div class="stat-card__icon stat-card__icon--amber" aria-hidden="true">&#9733;</div>
+        </div>
+        <p class="stat-card__value">{{ admin_users if admin_users is defined else '—' }}</p>
+        <p class="stat-card__delta stat-card__delta--flat">With admin role</p>
+    </div>
+</div>
+
+{# ---- Module cards ------------------------------------------------------- #}
+<div class="section-header">
+    <h2 class="section-title">Modules</h2>
+    <p class="section-meta">5 available</p>
+</div>
+
+<div class="module-grid">
+
+    <div class="module-card">
+        <div class="module-card__icon module-card__icon--indigo" aria-hidden="true">&#128101;</div>
+        <h3 class="module-card__title">Users</h3>
+        <p class="module-card__text">Manage accounts, roles, and permissions across the system.</p>
+        <div class="module-card__actions">
+            <a class="btn btn--ghost" href="{{ url_for('admin.users_page') }}">Manage</a>
+            <a class="btn btn--primary" href="{{ url_for('admin.export_users') }}">Export</a>
+        </div>
+    </div>
+
+    <div class="module-card">
+        <div class="module-card__icon module-card__icon--blue" aria-hidden="true">&#128202;</div>
+        <h3 class="module-card__title">Reports</h3>
+        <p class="module-card__text">Import user records and employee CRM data from Excel workbooks.</p>
+        <div class="module-card__actions">
+            <a class="btn btn--primary" href="{{ url_for('admin.reports') }}">Open Reports</a>
+        </div>
+    </div>
+
+    <div class="module-card">
+        <div class="module-card__icon module-card__icon--green" aria-hidden="true">&#128188;</div>
+        <h3 class="module-card__title">Employees</h3>
+        <p class="module-card__text">Add, edit, and delete CRM employee records. Export to Excel or import in bulk.</p>
+        <div class="module-card__actions">
+            <a class="btn btn--ghost" href="{{ url_for('admin.employees_list') }}">View all</a>
+            <a class="btn btn--primary" href="{{ url_for('admin.employee_new') }}">+ New</a>
+        </div>
+    </div>
+
+    <div class="module-card">
+        <div class="module-card__icon module-card__icon--indigo" aria-hidden="true">&#129302;</div>
+        <h3 class="module-card__title">AI Assistant</h3>
+        <p class="module-card__text">Ask questions, filter data, and draw charts with AI-assisted masking.</p>
+        <div class="module-card__actions">
+            <a class="btn btn--primary" href="{{ url_for('cria.index') }}">Open CRIA</a>
+        </div>
+    </div>
+
+    <div class="module-card">
+        <div class="module-card__icon module-card__icon--gray" aria-hidden="true">&#9881;</div>
+        <h3 class="module-card__title">Settings</h3>
+        <p class="module-card__text">Configure the database connection and application settings.</p>
+        <div class="module-card__actions">
+            <a class="btn btn--primary" href="{{ url_for('admin.settings') }}">Open Settings</a>
+        </div>
+    </div>
+
+</div>
+
 {% endblock %}

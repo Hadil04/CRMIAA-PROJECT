@@ -1,0 +1,102 @@
+{% extends "admin/layout.html" %}
+{% set active_page = "users" %}
+
+{% block title %}{{ form_title }} · CRMIAA{% endblock %}
+
+{% block page_content %}
+
+<div class="page-header">
+    <div class="page-header__left">
+        <h1 class="page-title">{{ form_title }}</h1>
+        <p class="page-subtitle">
+            {% if user and user.id is defined %}
+                Update the username, role, or password for this account.
+            {% else %}
+                Fill in the details to create a new user account.
+            {% endif %}
+        </p>
+    </div>
+    <div class="page-header__actions">
+        <a class="btn btn--ghost" href="{{ url_for('admin.users_page') }}">
+            &#8592;&nbsp;Back to users
+        </a>
+    </div>
+</div>
+
+<div class="section-block" style="max-width: 560px;">
+    <div class="section-block__head">
+        <h2 class="section-block__title">
+            {% if user and user.id is defined %}Edit account{% else %}New account{% endif %}
+        </h2>
+    </div>
+
+    {#
+       action  — passed from the route (user_create or user_update)
+       name attrs — "username", "password", "role" — match request.form.get() exactly
+    #}
+    <form method="POST"
+          action="{{ action }}"
+          novalidate
+          style="padding: var(--sp-6);">
+
+        <div class="settings-field" style="margin-bottom: var(--sp-5);">
+            <label class="settings-label" for="usr_username">Username</label>
+            <input class="settings-input"
+                   id="usr_username"
+                   name="username"
+                   type="text"
+                   required
+                   maxlength="100"
+                   autocomplete="off"
+                   placeholder="e.g. john_doe"
+                   value="{{ user.username if user else '' }}">
+        </div>
+
+        <div class="settings-field" style="margin-bottom: var(--sp-5);">
+            <label class="settings-label" for="usr_password">Password</label>
+            <input class="settings-input"
+                   id="usr_password"
+                   name="password"
+                   type="password"
+                   autocomplete="new-password"
+                   minlength="6"
+                   placeholder="{{ 'Leave blank to keep current password' if (user and user.id is defined) else 'At least 6 characters' }}">
+            {% if user and user.id is defined %}
+            <span class="settings-hint">
+                Leave blank to keep the existing password. Type a new one to replace it.
+            </span>
+            {% endif %}
+        </div>
+
+        <div class="settings-field" style="margin-bottom: var(--sp-6);">
+            <label class="settings-label" for="usr_role">Role</label>
+            <select class="settings-input"
+                    id="usr_role"
+                    name="role"
+                    required>
+                <option value="User"
+                    {% if not user or user.role == 'User' %}selected{% endif %}>
+                    User
+                </option>
+                <option value="Admin"
+                    {% if user and user.role == 'Admin' %}selected{% endif %}>
+                    Admin
+                </option>
+            </select>
+            <span class="settings-hint">
+                Admins have full access to this console.
+                At least one active Admin must always exist.
+            </span>
+        </div>
+
+        <div class="settings-actions">
+            <button class="btn btn--primary" type="submit">
+                {% if user and user.id is defined %}Save changes{% else %}Create user{% endif %}
+            </button>
+            <a class="btn btn--ghost" href="{{ url_for('admin.users_page') }}">Cancel</a>
+        </div>
+
+    </form>
+</div>
+
+{% endblock %}

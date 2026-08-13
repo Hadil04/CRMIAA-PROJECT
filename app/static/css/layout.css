@@ -1,0 +1,367 @@
+/* ==========================================================================
+   CRMIAA — App shell layout
+   Sidebar + topbar + scrollable main area.
+   ========================================================================== */
+
+/* ---- Outer shell -------------------------------------------------------- */
+.app-shell {
+    display: flex;
+    min-height: 100vh;
+    background: var(--page-bg);
+}
+
+/* ---- Sidebar ------------------------------------------------------------ */
+.sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: var(--sidebar-w);
+    background: var(--sidebar-bg);
+    display: flex;
+    flex-direction: column;
+    z-index: 100;
+    overflow-y: auto;
+    overflow-x: hidden;
+}
+
+/* Logo / brand block */
+.sidebar__brand {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    padding: var(--sp-5) var(--sp-4) var(--sp-4);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
+.sidebar__logo-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: var(--radius-sm);
+    background: var(--brand-gradient);
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: 0.9rem;
+    color: var(--white);
+    flex-shrink: 0;
+    letter-spacing: 0;
+    box-shadow: 0 2px 8px rgba(79, 70, 229, 0.45);
+}
+
+.sidebar__brand-text { min-width: 0; }
+
+.sidebar__app-name {
+    font-size: 1rem;
+    font-weight: 800;
+    color: var(--white);
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+}
+
+.sidebar__app-tag {
+    font-size: 0.65rem;
+    color: rgba(255, 255, 255, 0.42);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    line-height: 1;
+    margin-top: 2px;
+}
+
+/* Nav links */
+.sidebar__nav {
+    flex: 1;
+    padding: var(--sp-4) var(--sp-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-1);
+}
+
+.nav-link {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    padding: 9px var(--sp-3);
+    border-radius: var(--radius-sm);
+    color: rgba(255, 255, 255, 0.60);
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background 0.15s ease, color 0.15s ease;
+    white-space: nowrap;
+    position: relative;
+}
+
+.nav-link:hover {
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--white);
+}
+
+.nav-link.is-active {
+    background: var(--primary-light);
+    color: var(--primary);
+    font-weight: 600;
+}
+
+/* Left accent bar on active link */
+.nav-link.is-active::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 6px;
+    bottom: 6px;
+    width: 3px;
+    border-radius: 0 var(--radius-xs) var(--radius-xs) 0;
+    background: var(--primary);
+}
+
+.nav-link__icon {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    opacity: 0.75;
+    display: grid;
+    place-items: center;
+    font-size: 1rem;
+    line-height: 1;
+}
+
+.nav-link.is-active .nav-link__icon { opacity: 1; }
+
+/* Upgrade / sign-out block at the bottom */
+.sidebar__footer {
+    padding: var(--sp-4) var(--sp-3) var(--sp-5);
+    border-top: 1px solid rgba(255, 255, 255, 0.07);
+    display: flex;
+    flex-direction: column;
+    gap: var(--sp-2);
+}
+
+.sidebar__sign-out {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-3);
+    padding: 8px var(--sp-3);
+    border-radius: var(--radius-sm);
+    color: rgba(255, 255, 255, 0.45);
+    font-size: 0.8125rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: color 0.15s ease, background 0.15s ease;
+}
+
+.sidebar__sign-out:hover {
+    background: rgba(220, 38, 38, 0.12);
+    color: #FCA5A5;
+}
+
+/* ---- Content area (everything right of sidebar) ------------------------ */
+.app-content {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ---- Top bar ------------------------------------------------------------ */
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    height: var(--topbar-h);
+    background: var(--white);
+    border-bottom: 1px solid var(--gray-200);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--sp-8);
+    gap: var(--sp-4);
+    box-shadow: var(--shadow-xs);
+}
+
+/* Search */
+.topbar__search {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    background: var(--gray-100);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-full);
+    padding: 7px var(--sp-4);
+    width: 260px;
+    transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+}
+
+.topbar__search:focus-within {
+    background: var(--white);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
+}
+
+.topbar__search-icon {
+    color: var(--gray-400);
+    flex-shrink: 0;
+    font-size: 0.875rem;
+}
+
+.topbar__search input {
+    border: none;
+    background: transparent;
+    font: inherit;
+    font-size: 0.875rem;
+    color: var(--gray-700);
+    outline: none;
+    width: 100%;
+    min-width: 0;
+}
+
+.topbar__search input::placeholder { color: var(--gray-400); }
+
+/* Right-side icon cluster */
+.topbar__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    flex-shrink: 0;
+}
+
+.topbar__icon-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--gray-200);
+    background: var(--white);
+    color: var(--gray-500);
+    display: grid;
+    place-items: center;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s, border-color 0.15s;
+    text-decoration: none;
+}
+
+.topbar__icon-btn:hover {
+    background: var(--gray-100);
+    color: var(--gray-700);
+    border-color: var(--gray-300);
+}
+
+/* User avatar pill */
+.topbar__user {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    padding: 4px 12px 4px 4px;
+    border-radius: var(--radius-full);
+    border: 1px solid var(--gray-200);
+    background: var(--white);
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--gray-700);
+    white-space: nowrap;
+    margin-left: var(--sp-1);
+}
+
+.topbar__avatar {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--brand-gradient);
+    color: var(--white);
+    display: grid;
+    place-items: center;
+    font-weight: 700;
+    font-size: 0.75rem;
+    flex-shrink: 0;
+}
+
+/* ---- Scrollable page body ----------------------------------------------- */
+.page-body {
+    flex: 1;
+    padding: var(--sp-8) var(--sp-8) var(--sp-16);
+    overflow-y: auto;
+    max-width: var(--content-max);
+    width: 100%;
+    margin: 0 auto;         /* centre within app-content on wide screens */
+}
+
+/* ---- Page header (title row beneath topbar) ----------------------------- */
+.page-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    margin-bottom: var(--sp-6);
+    flex-wrap: wrap;
+}
+
+.page-header__left {}
+
+.page-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: var(--gray-900);
+    letter-spacing: -0.02em;
+    margin: 0;
+    line-height: 1.15;
+}
+
+.page-subtitle {
+    margin: var(--sp-1) 0 0;
+    font-size: 0.875rem;
+    color: var(--gray-500);
+    line-height: 1.55;
+}
+
+.page-header__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--sp-2);
+    flex-shrink: 0;
+    flex-wrap: wrap;
+}
+
+/* ---- Section headers ---------------------------------------------------- */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--sp-4);
+    margin-bottom: var(--sp-4);
+    padding-bottom: var(--sp-3);
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.section-title {
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--gray-900);
+    margin: 0;
+}
+
+.section-meta {
+    font-size: 0.8125rem;
+    color: var(--gray-500);
+    margin: 0;
+}
+
+/* ---- Responsive --------------------------------------------------------- */
+@media (max-width: 1024px) {
+    .page-body { padding: var(--sp-6) var(--sp-6) var(--sp-12); }
+}
+
+@media (max-width: 768px) {
+    .sidebar { transform: translateX(-100%); transition: transform 0.25s ease; }
+    .sidebar.is-open { transform: translateX(0); }
+    .app-content { margin-left: 0; }
+    .topbar { padding: 0 var(--sp-4); }
+    .page-body { padding: var(--sp-5) var(--sp-4) var(--sp-10); }
+    .topbar__search { width: 180px; }
+}
+
+@media (max-width: 480px) {
+    .topbar__search { display: none; }
+    .topbar__user span { display: none; }   /* hide username text, keep avatar */
+}

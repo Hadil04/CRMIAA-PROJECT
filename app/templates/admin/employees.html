@@ -1,0 +1,157 @@
+{% extends "admin/layout.html" %}
+{% set active_page = "employees" %}
+
+{% block title %}Employees · CRMIAA{% endblock %}
+
+{% block page_content %}
+
+<div class="page-header">
+    <div class="page-header__left">
+        <h1 class="page-title">Employees</h1>
+        <p class="page-subtitle">Create, edit, and delete CRM employee records.</p>
+    </div>
+    <div class="page-header__actions">
+        <a class="btn btn--ghost" href="{{ url_for('admin.export_employees') }}">
+            &#8595;&nbsp;Export .xlsx
+        </a>
+        <a class="btn btn--primary" href="{{ url_for('admin.employee_new') }}">
+            +&nbsp;New employee
+        </a>
+    </div>
+</div>
+
+{# ---- Stat strip --------------------------------------------------------- #}
+<div class="stat-grid" style="margin-bottom: var(--sp-6);">
+    <div class="stat-card">
+        <div class="stat-card__header">
+            <p class="stat-card__label">Total employees</p>
+            <div class="stat-card__icon stat-card__icon--blue" aria-hidden="true">&#128188;</div>
+        </div>
+        <p class="stat-card__value">{{ employees | length }}</p>
+        <p class="stat-card__delta stat-card__delta--flat">CRM records in DB</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card__header">
+            <p class="stat-card__label">Departments</p>
+            <div class="stat-card__icon stat-card__icon--indigo" aria-hidden="true">&#127970;</div>
+        </div>
+        <p class="stat-card__value">
+            {{ employees | map(attribute='department') | list | unique | list | length }}
+        </p>
+        <p class="stat-card__delta stat-card__delta--flat">Distinct departments</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card__header">
+            <p class="stat-card__label">Avg. salary</p>
+            <div class="stat-card__icon stat-card__icon--green" aria-hidden="true">&#8776;</div>
+        </div>
+        <p class="stat-card__value">
+            {% if employees %}
+                {{ (employees | sum(attribute='salary') / employees | length) | int | string }}
+            {% else %}
+                —
+            {% endif %}
+        </p>
+        <p class="stat-card__delta stat-card__delta--flat">Across all records</p>
+    </div>
+
+    <div class="stat-card">
+        <div class="stat-card__header">
+            <p class="stat-card__label">Total payroll</p>
+            <div class="stat-card__icon stat-card__icon--amber" aria-hidden="true">&#128176;</div>
+        </div>
+        <p class="stat-card__value">
+            {{ employees | sum(attribute='salary') | int }}
+        </p>
+        <p class="stat-card__delta stat-card__delta--flat">Sum of all salaries</p>
+    </div>
+</div>
+
+{# ---- Employees table ---------------------------------------------------- #}
+<div class="section-block">
+    <div class="section-block__head">
+        <h2 class="section-block__title" id="emp-heading">All employees</h2>
+        <p class="section-block__meta">
+            {{ employees | length }} record{{ "s" if employees | length != 1 else "" }}
+        </p>
+    </div>
+
+    {% if employees %}
+    <div class="table-wrap">
+        <table class="data-table" aria-labelledby="emp-heading">
+            <thead>
+                <tr>
+                    <th scope="col">ID</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Department</th>
+                    <th scope="col">Salary</th>
+                    <th scope="col">Created</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for emp in employees %}
+                <tr>
+                    <td style="color: var(--gray-400); font-size: 0.8125rem;">{{ emp.id }}</td>
+
+                    <td>
+                        <div class="name-cell">
+                            <div class="name-cell__avatar" aria-hidden="true">
+                                {{ emp.name[0] | upper }}
+                            </div>
+                            <div class="name-cell__primary">{{ emp.name }}</div>
+                        </div>
+                    </td>
+
+                    <td>
+                        <span class="pill pill--indigo">{{ emp.department }}</span>
+                    </td>
+
+                    <td style="font-variant-numeric: tabular-nums; font-weight: 600;">
+                        {{ emp.salary | int }}
+                    </td>
+
+                    <td style="color: var(--gray-400); font-size: 0.8125rem; white-space: nowrap;">
+                        {{ emp.created_at.strftime('%Y-%m-%d') if emp.created_at else '—' }}
+                    </td>
+
+                    <td>
+                        <div class="data-table__actions">
+                            <a class="btn btn--ghost btn--sm"
+                               href="{{ url_for('admin.employee_edit', employee_id=emp.id) }}">
+                                Edit
+                            </a>
+
+                            {# Delete — POST form with JS confirm() guard #}
+                            <form method="POST"
+                                  action="{{ url_for('admin.employee_delete', employee_id=emp.id) }}"
+                                  onsubmit="return confirm('Delete {{ emp.name | e }}? This cannot be undone.')">
+                                <button class="btn btn--danger btn--sm" type="submit">
+                                    Delete
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% else %}
+    <div style="padding: var(--sp-12) var(--sp-6); text-align: center; color: var(--gray-400);">
+        <div style="font-size: 2.5rem; margin-bottom: var(--sp-3); opacity: .4;">&#128188;</div>
+        <p style="font-size: 0.9375rem; margin: 0 0 var(--sp-4);">
+            No employees yet. Import from Excel or add one manually.
+        </p>
+        <a class="btn btn--primary" href="{{ url_for('admin.employee_new') }}">
+            + Add first employee
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+
+{% endblock %}

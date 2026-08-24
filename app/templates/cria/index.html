@@ -14,7 +14,6 @@
     <h1 class="chat-header__title">Hello, {{ username }}</h1>
     <p class="chat-header__sub">How can CRMIAA assist your data analysis today?</p>
 
-    {# Dataset info pill #}
     <div class="chat-dataset-pill" aria-label="Dataset summary">
         <span class="chat-dataset-pill__dot" aria-hidden="true"></span>
         <strong>{{ row_count }}</strong>&nbsp;row{{ "s" if row_count != 1 else "" }}&nbsp;&middot;&nbsp;
@@ -24,7 +23,7 @@
     </div>
 </div>
 
-{# ---- Tab switcher (preserved — JS depends on .cria-tab / .is-active) --- #}
+{# ---- Tab switcher (JS depends on .cria-tab / .is-active / data-tab) ---- #}
 <div class="cria-tabs chat-tabs" role="tablist" aria-label="CRIA actions">
     <button type="button"
             class="cria-tab{% if active_tab == 'ask' %} is-active{% endif %}"
@@ -44,28 +43,30 @@
             aria-selected="{{ 'true' if active_tab == 'graph' else 'false' }}">
         &#128202; Draw chart
     </button>
+    <button type="button"
+            class="cria-tab smart-tab{% if active_tab == 'smart' %} is-active{% endif %}"
+            data-tab="smart" role="tab"
+            aria-selected="{{ 'true' if active_tab == 'smart' else 'false' }}">
+        &#9889; Smart mode
+    </button>
 </div>
 
 {# ===========================================================================
-   Panel: Ask AI  (chat-style)
-   form action/method/name attrs unchanged
+   Panel: Ask AI
    =========================================================================== #}
 <section id="panel-ask"
          class="cria-panel{% if active_tab == 'ask' %} is-active{% endif %}"
          role="tabpanel">
 
-    {# Chat history area #}
     <div class="chat-history" aria-live="polite" aria-label="Conversation">
 
         {% if ask_question %}
-        {# User bubble — right-aligned indigo #}
         <div class="chat-bubble chat-bubble--user">
             <p>{{ ask_question }}</p>
         </div>
         {% endif %}
 
         {% if ask_answer %}
-        {# AI bubble — left-aligned white #}
         <div class="chat-bubble chat-bubble--ai">
             <div class="chat-bubble__avatar" aria-hidden="true">&#129302;</div>
             <div class="chat-bubble__body">
@@ -83,7 +84,6 @@
 
     </div>
 
-    {# Quick-action pills #}
     <div class="chat-pills" aria-label="Suggested queries">
         <button type="button" class="chat-pill" data-fill="Who earns the most?">
             &#8679; Top earner
@@ -99,7 +99,6 @@
         </button>
     </div>
 
-    {# Input bar — form action/method/name unchanged #}
     <form class="chat-input-bar" method="POST" action="{{ url_for('cria.ask') }}">
         <textarea class="chat-input-bar__textarea"
                   id="question" name="question"
@@ -112,11 +111,11 @@
             &#8679;
         </button>
     </form>
+
 </section>
 
 {# ===========================================================================
    Panel: Filter data
-   form action/method/name attrs unchanged
    =========================================================================== #}
 <section id="panel-filter"
          class="cria-panel{% if active_tab == 'filter' %} is-active{% endif %}"
@@ -126,11 +125,9 @@
 
         {% if filter_rows is defined %}
             {% if filter_rows %}
-            {# User bubble #}
             <div class="chat-bubble chat-bubble--user">
                 <p>{{ filter_text }}</p>
             </div>
-            {# AI result bubble #}
             <div class="chat-bubble chat-bubble--ai chat-bubble--wide">
                 <div class="chat-bubble__avatar" aria-hidden="true">&#129302;</div>
                 <div class="chat-bubble__body">
@@ -189,11 +186,12 @@
         <button class="chat-input-bar__send btn btn--primary btn--icon"
                 type="submit" aria-label="Apply filter">&#8679;</button>
     </form>
+
 </section>
 
 {# ===========================================================================
    Panel: Draw chart
-   All name/id attrs and .cria-chart-fields / data-chart-type preserved
+   .cria-chart-fields / data-chart-type class names preserved for JS
    =========================================================================== #}
 <section id="panel-graph"
          class="cria-panel{% if active_tab == 'graph' %} is-active{% endif %}"
@@ -226,7 +224,6 @@
 
     </div>
 
-    {# Chart config form — all name/id/action/method unchanged #}
     <form class="chat-chart-form" method="POST" action="{{ url_for('cria.graph') }}">
 
         <div class="chat-chart-form__row">
@@ -250,7 +247,6 @@
             </div>
         </div>
 
-        {# JS-controlled field visibility — class names PRESERVED #}
         <div class="cria-chart-fields chat-chart-form__row"
              data-chart-type="{{ chart_type or 'bar' }}">
             <div class="chat-chart-form__field bar-only">
@@ -280,16 +276,150 @@
         </div>
 
     </form>
+
 </section>
 
-{% endblock %}
+{# ===========================================================================
+   Panel: Smart mode
+   name="smart_input" matches cria.smart route exactly
+   =========================================================================== #}
+<section id="panel-smart"
+         class="cria-panel{% if active_tab == 'smart' %} is-active{% endif %}"
+         role="tabpanel">
 
+    <div class="chat-history" aria-live="polite" aria-label="Smart mode result">
+
+        {% if smart_result %}
+
+            <div class="chat-bubble chat-bubble--user">
+                <p>{{ smart_result.user_input }}</p>
+            </div>
+
+            {% if smart_result.action == 'filter' %}
+                <div class="chat-bubble chat-bubble--ai chat-bubble--wide">
+                    <div class="chat-bubble__avatar" aria-hidden="true">&#128269;</div>
+                    <div class="chat-bubble__body">
+                        <p class="chat-bubble__label">{{ smart_result.message }}</p>
+                        {% if smart_result.filter_rows %}
+                        <div class="chat-result-table">
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        {% for col in smart_result.filter_columns %}
+                                        <th scope="col">{{ col }}</th>
+                                        {% endfor %}
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in smart_result.filter_rows %}
+                                    <tr>
+                                        {% for col in smart_result.filter_columns %}
+                                        <td>{{ row[col] }}</td>
+                                        {% endfor %}
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <p>No matching rows.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+            {% elif smart_result.action == 'chart' %}
+                <div class="chat-bubble chat-bubble--ai chat-bubble--wide">
+                    <div class="chat-bubble__avatar" aria-hidden="true">&#128202;</div>
+                    <div class="chat-bubble__body">
+                        <p class="chat-bubble__label">{{ smart_result.message }}</p>
+                        {% if smart_result.chart_filename %}
+                        <img class="chat-chart-img"
+                             src="{{ url_for('static', filename=smart_result.chart_filename) }}"
+                             alt="Generated chart">
+                        {% endif %}
+                    </div>
+                </div>
+
+            {% else %}
+                <div class="chat-bubble chat-bubble--ai">
+                    <div class="chat-bubble__avatar" aria-hidden="true">&#129302;</div>
+                    <div class="chat-bubble__body">
+                        <p>{{ smart_result.message }}</p>
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="smart-action-badge smart-action-badge--{{ smart_result.action }}"
+                 aria-label="Action taken by AI">
+                {% if smart_result.action == 'filter' %}
+                    &#128269;&nbsp;Gemini chose: <strong>filter data</strong>
+                {% elif smart_result.action == 'chart' %}
+                    &#128202;&nbsp;Gemini chose: <strong>draw chart</strong>
+                {% else %}
+                    &#129302;&nbsp;Gemini chose: <strong>answer question</strong>
+                {% endif %}
+            </div>
+
+        {% else %}
+        <div class="chat-empty">
+            <div class="chat-empty__icon" aria-hidden="true">&#9889;</div>
+            <p class="chat-empty__text">
+                Type anything in plain English — CRIA will automatically decide
+                whether to filter data, draw a chart, or answer your question.
+            </p>
+        </div>
+        {% endif %}
+
+    </div>
+
+    <div class="chat-pills" aria-label="Smart mode suggestions">
+        <button type="button" class="chat-pill"
+                data-fill="What is the salary of Karim?">
+            &#129302; Ask about salary
+        </button>
+        <button type="button" class="chat-pill"
+                data-fill="Show me people in IT department">
+            &#128269; Filter by dept.
+        </button>
+        <button type="button" class="chat-pill"
+                data-fill="Draw a bar chart of salary by department">
+            &#128202; Chart salary
+        </button>
+        <button type="button" class="chat-pill"
+                data-fill="What's a good strategy to reduce costs?">
+            &#128161; General advice
+        </button>
+    </div>
+
+    <form class="chat-input-bar smart-input-bar"
+          method="POST"
+          action="{{ url_for('cria.smart') }}">
+        <textarea class="chat-input-bar__textarea"
+                  id="smart_input"
+                  name="smart_input"
+                  rows="1"
+                  placeholder="Ask anything — filter, chart, or question…"
+                  aria-label="Smart mode input"
+                  required>{{ smart_input or "" }}</textarea>
+        <button class="chat-input-bar__send smart-send btn btn--primary btn--icon"
+                type="submit"
+                aria-label="Send"
+                title="Smart mode — Gemini picks the action">
+            &#9889;
+        </button>
+    </form>
+
+</section>
+
+{% endblock %}{# page_content #}
+
+{# ---- Single scripts block — all JS for every tab in one place ---------- #}
 {% block scripts %}
 <script>
 (function () {
     "use strict";
 
-    /* ---- Tab switching — preserves .cria-tab / .is-active / data-tab ---- */
+    /* ---- Tab switching (.cria-tab / .is-active / data-tab preserved) ---- */
     var tabs   = document.querySelectorAll(".cria-tab");
     var panels = document.querySelectorAll(".cria-panel");
 
@@ -307,7 +437,7 @@
         });
     });
 
-    /* ---- Chart-type field visibility — preserves data-chart-type -------- */
+    /* ---- Chart-type field visibility (.cria-chart-fields preserved) ----- */
     var chartTypeSelect = document.getElementById("chart_type");
     var chartFields     = document.querySelector(".cria-chart-fields");
 
@@ -320,17 +450,19 @@
         syncChartFields();
     }
 
-    /* ---- Quick-action pill fill ----------------------------------------- */
+    /* ---- Quick-action pill fill (all panels) ---------------------------- */
     document.querySelectorAll(".chat-pill").forEach(function (pill) {
         pill.addEventListener("click", function () {
             var fill   = pill.dataset.fill;
             var panel  = pill.closest(".cria-panel");
-            var target = panel ? panel.querySelector("textarea, input[type=text]") : null;
+            var target = panel
+                ? panel.querySelector("textarea, input[type=text]")
+                : null;
             if (target && fill) { target.value = fill; target.focus(); }
         });
     });
 
-    /* ---- Auto-grow textarea --------------------------------------------- */
+    /* ---- Auto-grow textareas -------------------------------------------- */
     document.querySelectorAll(".chat-input-bar__textarea").forEach(function (ta) {
         if (ta.tagName !== "TEXTAREA") return;
         ta.addEventListener("input", function () {
@@ -338,6 +470,14 @@
             ta.style.height = Math.min(ta.scrollHeight, 160) + "px";
         });
     });
+
+    /* ---- Scroll smart panel history to bottom on load ------------------ */
+    var smartPanel = document.getElementById("panel-smart");
+    if (smartPanel && smartPanel.classList.contains("is-active")) {
+        var hist = smartPanel.querySelector(".chat-history");
+        if (hist) hist.scrollTop = hist.scrollHeight;
+    }
+
 }());
 </script>
 {% endblock %}

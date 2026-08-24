@@ -7,7 +7,7 @@ from pathlib import Path
 import pandas as pd
 from flask import Blueprint, current_app, flash, render_template, request, session
 
-from app.cria.ai_client import ask_ai
+from app.cria.ai_client import ask_ai, handle_request
 from app.cria.data_loader import load_csv, load_from_db
 from app.cria.filter import filter_data, parse_filter_request
 from app.cria.graph_maker import make_bar_chart, make_pie_chart
@@ -208,4 +208,63 @@ def graph():
         active_tab="graph",
         **form_context,
         chart_filename=f"cria_charts/{filename}",
+    )
+
+
+@cria_bp.route("/smart", methods=["POST"])
+@login_required
+@role_required("Admin")
+def smart():
+    """Smart mode — single natural-language input, Gemini picks the action.
+
+    Returns the same cria/index.html template with a ``smart_result`` dict
+    that the template uses to render the correct output (table / chart / text).
+    The existing tabs (Ask AI, Filter, Draw chart) are completely unaffected.
+    """
+    user_input = request.form.get("smart_input", "").strip()
+    if not user_input:
+        flash("Please enter a request.", "warning")
+        return _render_index(active_tab="smart")
+
+    try:
+        df, _source = _load_dataset()
+        result = handle_request(
+            user_input,
+            df,
+            charts_dir=_charts_dir(),
+        )
+    except Exception as exc:
+        flash(f"Smart mode error: {exc}", "error")
+        return _render_index(active_tab="smart", smart_input=user_input)
+
+    # Normalise the result so the template always gets consistent keys.
+    action  = result.get("action", "answer")
+    message = result.get("message", "")
+
+    smart_result = {
+        "action":       action,
+        "message":      message,
+        "user_input":   user_input,
+        # filter-specific
+        "filter_rows":    None,
+        "filter_columns": [],
+        # chart-specific
+        "chart_filename": None,
+    }
+
+    if action == "filter":
+        filtered_df = result.get("result")
+        if filtered_df is not None and not filtered_df.empty:
+            smart_result["filter_rows"]    = filtered_df.to_dict(orient="records")
+            smart_result["filter_columns"] = list(filtered_df.columns)
+
+    elif action == "chart":
+        chart_path = result.get("result", "")
+        # chart_path is already relative to static/ (e.g. "cria_charts/chart_xxx.png")
+        smart_result["chart_filename"] = chart_path
+
+    return _render_index(
+        active_tab="smart",
+        smart_input=user_input,
+        smart_result=smart_result,
     )

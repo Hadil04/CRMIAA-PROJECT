@@ -5,7 +5,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from app.cria.ai_client import ask_ai
+from app.cria.ai_client import ask_ai, handle_request
 from app.cria.data_loader import load_csv, load_from_db
 from app.cria.filter import filter_data, parse_filter_request
 from app.cria.graph_maker import make_bar_chart, make_pie_chart
@@ -52,19 +52,20 @@ def load_data() -> pd.DataFrame:
 
 def print_menu() -> None:
     """Display the main menu."""
-    print("CRIA — What would you like to do?")
+    print("\nCRIA — What would you like to do?")
     print("1. Ask a question about the data (AI)")
     print("2. Filter the data")
     print("3. Draw a graph")
-    print("4. Exit")
+    print("4. Smart mode — natural language (auto-detect action)")
+    print("5. Exit")
 
 
 def read_menu_choice() -> str | None:
     """Read and validate a menu choice, or None if invalid."""
-    choice = input("\nEnter choice (1-4): ").strip()
-    if choice in {"1", "2", "3", "4"}:
+    choice = input("\nEnter choice (1-5): ").strip()
+    if choice in {"1", "2", "3", "4", "5"}:
         return choice
-    print("Invalid choice. Please enter a number from 1 to 4.")
+    print("Invalid choice. Please enter a number from 1 to 5.")
     return None
 
 
@@ -165,6 +166,36 @@ def handle_graph(df: pd.DataFrame) -> None:
     print(f"\nChart saved to: {save_path}")
 
 
+def handle_smart_request(df: pd.DataFrame) -> None:
+    """Option 4 — Smart mode: one natural-language input, Gemini picks the action."""
+    user_input = input("\nWhat would you like to do? ").strip()
+    if not user_input:
+        print("No input entered.")
+        return
+
+    print("\nThinking…")
+
+    result = handle_request(user_input, df, charts_dir=None)
+    action  = result.get("action")
+    message = result.get("message", "")
+
+    if action == "filter":
+        filtered_df = result.get("result")
+        print(f"\n{message}")
+        if filtered_df is not None and not filtered_df.empty:
+            print(filtered_df.to_string(index=False))
+        else:
+            print("(no matching rows)")
+
+    elif action == "chart":
+        chart_path = result.get("result", "")
+        print(f"\n{message}")
+        print(f"Chart saved to: {chart_path}")
+
+    else:  # "answer"
+        print(f"\nAnswer:\n{message}")
+
+
 def main() -> None:
     """Run the CRIA interactive menu."""
     df = load_data()
@@ -174,7 +205,7 @@ def main() -> None:
         choice = read_menu_choice()
         if choice is None:
             continue
-        if choice == "4":
+        if choice == "5":
             print("\nGoodbye!")
             break
 
@@ -185,6 +216,8 @@ def main() -> None:
                 handle_filter(df)
             elif choice == "3":
                 handle_graph(df)
+            elif choice == "4":
+                handle_smart_request(df)
         except Exception as exc:
             print(f"\nSomething went wrong: {exc}")
 

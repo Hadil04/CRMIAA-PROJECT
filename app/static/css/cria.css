@@ -415,3 +415,74 @@
     .chat-tabs { gap: 0; }
     .cria-tab  { padding: 10px var(--sp-3); font-size: 0.8125rem; }
 }
+
+/* ---- Smart mode tab — distinct indigo accent --------------------------- */
+.cria-tab.smart-tab {
+    color: var(--primary);
+    font-weight: 700;
+}
+
+.cria-tab.smart-tab:not(.is-active) {
+    color: var(--gray-500);
+}
+
+.cria-tab.smart-tab.is-active {
+    color: var(--primary);
+    border-bottom-color: var(--primary);
+}
+
+/* Lightning bolt send button — same size as regular send, purple fill */
+.smart-send {
+    background: var(--brand-gradient);
+    font-size: 1rem;
+}
+
+.smart-send:hover {
+    opacity: 0.88;
+    background: var(--brand-gradient);
+}
+
+/* ---- Action badge — "Gemini chose: …" strip below the result ---------- */
+.smart-action-badge {
+    align-self: center;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--sp-1);
+    padding: 5px 14px;
+    border-radius: var(--radius-full);
+    font-size: 0.78rem;
+    font-weight: 500;
+    color: var(--gray-500);
+    background: var(--gray-100);
+    border: 1px solid var(--gray-200);
+    margin-top: calc(-1 * var(--sp-2));   /* pull it closer to the bubble above */
+}
+
+.smart-action-badge strong {
+    font-weight: 700;
+    color: var(--gray-700);
+}
+
+.smart-action-badge--filter {
+    background: var(--blue-bg);
+    border-color: var(--blue-mid);
+    color: var(--blue);
+}
+
+.smart-action-badge--filter strong { color: var(--blue); }
+
+.smart-action-badge--chart {
+    background: var(--primary-light);
+    border-color: var(--primary-mid);
+    color: var(--primary);
+}
+
+.smart-action-badge--chart strong { color: var(--primary); }
+
+.smart-action-badge--answer {
+    background: var(--green-bg);
+    border-color: var(--green-mid);
+    color: var(--green);
+}
+
+.smart-action-badge--answer strong { color: var(--green); }
